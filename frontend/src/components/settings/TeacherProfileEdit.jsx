@@ -1,12 +1,19 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
+import PropTypes from 'prop-types'; // Import for prop types validation
 
 const TeacherProfileEdit = ({ teacher, setTeacher, onSave }) => {
   const [errors, setErrors] = useState({});
+  const [originalTeacher, setOriginalTeacher] = useState(teacher);
+
+  useEffect(() => {
+    // Update originalTeacher whenever the teacher prop changes
+    setOriginalTeacher(teacher);
+  }, [teacher]);
 
   const handleInputChange = (e) => {
     const { name, value } = e.target;
-    setTeacher({ ...teacher, [name]: value });
-    setErrors({ ...errors, [name]: '' }); // Clear errors when input changes
+    setTeacher(prevTeacher => ({ ...prevTeacher, [name]: value }));
+    setErrors(prevErrors => ({ ...prevErrors, [name]: '' })); // Clear errors when input changes
   };
 
   const validateFields = () => {
@@ -15,8 +22,6 @@ const TeacherProfileEdit = ({ teacher, setTeacher, onSave }) => {
     if (!teacher.department.trim()) newErrors.department = 'Department is required.';
     if (!teacher.email.trim() || !/\S+@\S+\.\S+/.test(teacher.email))
       newErrors.email = 'Valid email is required.';
-    if (!teacher.phone.trim() || !/^\d{10}$/.test(teacher.phone))
-      newErrors.phone = 'Valid 10-digit phone number is required.';
     return newErrors;
   };
 
@@ -27,6 +32,11 @@ const TeacherProfileEdit = ({ teacher, setTeacher, onSave }) => {
     } else {
       onSave();
     }
+  };
+
+  const handleDiscard = () => {
+    setTeacher(originalTeacher); // Reset to original teacher data
+    setErrors({}); // Optionally reset errors
   };
 
   return (
@@ -65,25 +75,32 @@ const TeacherProfileEdit = ({ teacher, setTeacher, onSave }) => {
         />
         {errors.email && <p className="text-sm text-[#E74C3C]">{errors.email}</p>}
       </div>
-      <div className="mb-4">
-        <label className="block text-sm font-semibold text-[#ECF0F1]">Phone</label>
-        <input
-          type="text"
-          name="phone"
-          className="w-full p-2 border border-[#2C3E50] rounded-md bg-[#ECF0F1] text-[#2C3E50]"
-          value={teacher.phone}
-          onChange={handleInputChange}
-        />
-        {errors.phone && <p className="text-sm text-[#E74C3C]">{errors.phone}</p>}
+      <div className="flex justify-between">
+        <button
+          onClick={handleSave}
+          className="mt-4 px-4 py-2 bg-[#2C3E50] text-[#FFFFFF] rounded-md hover:bg-lime-500 focus:ring-[#2C3E50] focus:ring-opacity-50"
+        >
+          Save Changes
+        </button>
+        <button
+          onClick={handleDiscard}
+          className="mt-4 px-4 py-2 bg-[#E74C3C] text-[#FFFFFF] rounded-md hover:bg-[#C0392B] focus:ring-[#E74C3C] focus:ring-opacity-50"
+        >
+          Discard Changes
+        </button>
       </div>
-      <button
-        onClick={handleSave}
-        className="mt-4 px-4 py-2 bg-[#2C3E50] text-[#FFFFFF] rounded-md hover:bg-[#E74C3C]"
-      >
-        Save Changes
-      </button>
     </div>
   );
+};
+
+TeacherProfileEdit.propTypes = {
+  teacher: PropTypes.shape({
+    name: PropTypes.string.isRequired,
+    department: PropTypes.string.isRequired,
+    email: PropTypes.string.isRequired,
+  }).isRequired,
+  setTeacher: PropTypes.func.isRequired,
+  onSave: PropTypes.func.isRequired,
 };
 
 export default TeacherProfileEdit;

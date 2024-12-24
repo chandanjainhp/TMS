@@ -2,7 +2,7 @@ import React, { useState } from "react";
 import TeacherProfileDisplay from "../components/settings/TeacherProfileDisplay";
 import TeacherProfileEdit from "../components/settings/TeacherProfileEdit";
 import ChangePassword from "../components/settings/ChangePassword";
-
+import Header from "../components/common/Header";
 const TeacherProfilePage = () => {
   // Initial profile data
   const teacher = {
@@ -37,7 +37,9 @@ const TeacherProfilePage = () => {
   };
 
   return (
-    <div className="flex-1 overflow-auto relative z-10 bg-[#34495E]"> {/* Background color: Slate Gray */}
+    <div className="flex-1 overflow-auto relative z-10 bg-[#34495E]"> 
+    <Header/>
+    {/* Background color: Slate Gray */}
       <main className="max-w-7xl mx-auto py-6 px-4 lg:px-8 text-[#FFFFFF]"> {/* Text color: White */}
       <div className="mt-6 p-6 bg-[#2C3E50] rounded-lg shadow-lg">
         {/* Conditionally render based on whether we are in edit mode */}

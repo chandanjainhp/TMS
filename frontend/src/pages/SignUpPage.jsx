@@ -1,9 +1,9 @@
 import { motion } from "framer-motion";
-import Input from "../components/Input";
+import Input from "../components/login/Input";
 import { Loader, Lock, Mail, User } from "lucide-react";
 import { useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
-import PasswordStrengthMeter from "../components/PasswordStrengthMeter";
+import PasswordStrengthMeter from "../components/login/PasswordStrengthMeter";
 import { useAuthStore } from "../store/authStore";
 
 const SignUpPage = () => {
