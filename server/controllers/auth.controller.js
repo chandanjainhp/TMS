@@ -7,6 +7,8 @@ import {
 	sendResetSuccessEmail,
 	sendVerificationEmail,
 	sendWelcomeEmail,
+	sendPasswordResetOTP,
+	sendPasswordResetOTPEmail,
 } from "../email/emails.js";
 import { User } from "../models/user.model.js";
 
@@ -169,19 +171,19 @@ export const forgotPassword = async (req, res) => {
 			return res.status(400).json({ success: false, message: "User not found" });
 		}
 
-		// Generate reset token
-		const resetToken = crypto.randomBytes(20).toString("hex");
-		const resetTokenExpiresAt = Date.now() + 1 * 60 * 60 * 1000; // 1 hour
+		// Generate 6-digit OTP
+		const resetOTP = Math.floor(100000 + Math.random() * 900000).toString();
+		const resetPasswordOTPExpiresAt = Date.now() + 15 * 60 * 1000; // 15 minutes
 
-		user.resetPasswordToken = resetToken;
-		user.resetPasswordExpiresAt = resetTokenExpiresAt;
+		user.resetPasswordOTP = resetOTP;
+		user.resetPasswordOTPExpiresAt = resetPasswordOTPExpiresAt;
 
 		await user.save();
 
-		// send email
-		await sendPasswordResetEmail(user.email, `${process.env.CLIENT_URL}/reset-password/${resetToken}`);
+		// send email with OTP
+		await sendPasswordResetOTPEmail(user.email, resetOTP);
 
-		res.status(200).json({ success: true, message: "Password reset link sent to your email" });
+		res.status(200).json({ success: true, message: "Password reset OTP sent to your email" });
 	} catch (error) {
 		console.log("Error in forgotPassword ", error);
 		res.status(400).json({ success: false, message: error.message });
@@ -190,24 +192,23 @@ export const forgotPassword = async (req, res) => {
 
 export const resetPassword = async (req, res) => {
 	try {
-		const { token } = req.params;
-		const { password } = req.body;
+		const { otp, password } = req.body;
 
 		const user = await User.findOne({
-			resetPasswordToken: token,
-			resetPasswordExpiresAt: { $gt: Date.now() },
+			resetPasswordOTP: otp,
+			resetPasswordOTPExpiresAt: { $gt: Date.now() },
 		});
 
 		if (!user) {
-			return res.status(400).json({ success: false, message: "Invalid or expired reset token" });
+			return res.status(400).json({ success: false, message: "Invalid or expired OTP" });
 		}
 
 		// update password
 		const hashedPassword = await bcryptjs.hash(password, 10);
 
 		user.password = hashedPassword;
-		user.resetPasswordToken = undefined;
-		user.resetPasswordExpiresAt = undefined;
+		user.resetPasswordOTP = undefined;
+		user.resetPasswordOTPExpiresAt = undefined;
 		await user.save();
 
 		await sendResetSuccessEmail(user.email);
@@ -278,5 +279,116 @@ export const changePassword = async (req, res) => {
 	} catch (error) {
 		console.error("Error in changePassword:", error);
 		res.status(500).json({ success: false, message: "Server error" });
+	}
+};
+
+// Admin password reset request with OTP (only for backupid849@gmail.com)
+export const adminForgotPassword = async (req, res) => {
+	const { email } = req.body;
+	const ADMIN_BACKUP_EMAIL = "backupid849@gmail.com";
+	
+	try {
+		// Check if email matches the admin backup email
+		if (email !== ADMIN_BACKUP_EMAIL) {
+			return res.status(403).json({ 
+				success: false, 
+				message: "Admin password reset is only available for authorized backup email (backupid849@gmail.com)" 
+			});
+		}
+
+		const user = await User.findOne({ email });
+
+		if (!user) {
+			return res.status(404).json({ 
+				success: false, 
+				message: "Admin user not found. Please run the setup script: node server/scripts/setupBackupAdmin.js" 
+			});
+		}
+
+		// Ensure user has admin role
+		if (user.role !== 'admin') {
+			return res.status(403).json({ 
+				success: false, 
+				message: "This email is not registered as an admin. Please contact support." 
+			});
+		}
+
+		// Generate 6-digit OTP
+		const resetOTP = Math.floor(100000 + Math.random() * 900000).toString();
+		const resetOTPExpiresAt = Date.now() + 15 * 60 * 1000; // 15 minutes
+
+		user.resetPasswordOTP = resetOTP;
+		user.resetPasswordOTPExpiresAt = resetOTPExpiresAt;
+
+		await user.save();
+
+		// Send OTP email
+		await sendPasswordResetOTP(user.email, resetOTP);
+
+		console.log(`✅ OTP sent to ${user.email}: ${resetOTP}`); // For testing
+
+		res.status(200).json({ 
+			success: true, 
+			message: "Password reset OTP sent to your email. Valid for 15 minutes." 
+		});
+	} catch (error) {
+		console.log("Error in adminForgotPassword ", error);
+		res.status(400).json({ success: false, message: error.message });
+	}
+};
+
+// Verify OTP and reset admin password
+export const adminResetPasswordWithOTP = async (req, res) => {
+	const { email, otp, newPassword } = req.body;
+	const ADMIN_BACKUP_EMAIL = "backupid849@gmail.com";
+
+	try {
+		// Check if email matches the admin backup email
+		if (email !== ADMIN_BACKUP_EMAIL) {
+			return res.status(403).json({ 
+				success: false, 
+				message: "Admin password reset is only available for authorized backup email" 
+			});
+		}
+
+		// Validate inputs
+		if (!email || !otp || !newPassword) {
+			return res.status(400).json({ 
+				success: false, 
+				message: "Email, OTP, and new password are required" 
+			});
+		}
+
+		const user = await User.findOne({
+			email,
+			role: "admin",
+			resetPasswordOTP: otp,
+			resetPasswordOTPExpiresAt: { $gt: Date.now() },
+		});
+
+		if (!user) {
+			return res.status(400).json({ 
+				success: false, 
+				message: "Invalid or expired OTP" 
+			});
+		}
+
+		// Update password
+		const hashedPassword = await bcryptjs.hash(newPassword, 10);
+
+		user.password = hashedPassword;
+		user.resetPasswordOTP = undefined;
+		user.resetPasswordOTPExpiresAt = undefined;
+		await user.save();
+
+		await sendResetSuccessEmail(user.email);
+
+		res.status(200).json({ 
+			success: true, 
+			message: "Admin password reset successful" 
+		});
+	} catch (error) {
+		console.log("Error in adminResetPasswordWithOTP ", error);
+		res.status(400).json({ success: false, message: error.message });
 	}
 };

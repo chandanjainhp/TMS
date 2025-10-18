@@ -9,18 +9,23 @@ import LoadingSpinner from "./components/login/LoadingSpinner";
 import SettingsPage from "./pages/SettingsPage";
 import { Toaster } from "react-hot-toast";
 import { useAuthStore } from "./store/authStore";
+import { useAdminAuthStore } from "./store/adminAuthStore";
 import { useEffect } from "react";
 import LandingPage from "./pages/LandingPage";
-import Sidebar from "./components/common/Sidebar";
+import Header from "./components/common/Header";
+import SessionTimeoutTracker from "./components/common/SessionTimeoutTracker";
 
 import TeacherlogPage from "./pages/TeacherloginPage";
 import AdminLoginPage from "./pages/AdminLoginPage";
+import AdminForgotPasswordPage from "./pages/AdminForgotPasswordPage";
+import AdminResetPasswordOTPPage from "./pages/AdminResetPasswordOTPPage";
 import UploadPage from "./pages/UploadPage";
 import RecordsPage from "./pages/RecordsPage";
 import FormDataPage from "./pages/FormDataPage";
 import AdminRecordsPage from "./pages/AdminRecordsPage";
 import AdminTeacherLogPage from "./pages/AdminTeacherLogPage";
 import AdminDashboardPage from "./pages/AdminDashboardPage";
+import AdminSettingsPage from "./pages/AdminSettingsPage";
 
 // Protect routes that require authentication
 const ProtectedRoute = ({ children }) => {
@@ -47,23 +52,22 @@ const ProtectedRoute = ({ children }) => {
 
 // Protect routes that require admin privileges
 const AdminRoute = ({ children }) => {
-  const { isAuthenticated, user } = useAuthStore();
+  const { isAuthenticated: userIsAuthenticated, user } = useAuthStore();
+  const { isAuthenticated: adminIsAuthenticated, admin } = useAdminAuthStore();
 
-  if (!isAuthenticated || !user) {
-    return <Navigate to="/login" replace />;
+  // Check if logged in via adminAuthStore
+  if (adminIsAuthenticated && admin && admin.role === 'admin') {
+    return children;
   }
 
-  if (!user?.isVerified) {
-    return <Navigate to="/verify-email" replace />;
+  // Fallback: Check if logged in via regular authStore with admin role
+  if (userIsAuthenticated && user && user.role === 'admin' && user.isVerified) {
+    return children;
   }
 
-  // Check if user is admin
-  if (!user.role || user.role !== 'admin') {
-    console.log('User is not an admin, redirecting from admin-only route');
-    return <Navigate to="/" replace />;
-  }
-
-  return children;
+  // Not authenticated as admin, redirect to admin login
+  console.log('User is not an admin, redirecting to admin login');
+  return <Navigate to="/admin-login" replace />;
 };
 
 // Redirect authenticated users to the appropriate page
@@ -92,6 +96,7 @@ const RedirectAuthenticatedUser = ({ children }) => {
 
 function App() {
   const { isCheckingAuth, checkAuth } = useAuthStore();
+  const { checkAuth: checkAdminAuth } = useAdminAuthStore();
   const location = useLocation();
 
   // Call checkAuth once when the app loads
@@ -99,6 +104,7 @@ function App() {
     const initAuth = async () => {
       try {
         await checkAuth();
+        await checkAdminAuth();
       } catch (error) {
         console.error('Error during authentication check:', error);
       }
@@ -108,34 +114,36 @@ function App() {
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
-  // Define routes that don't require the sidebar
-  const noSidebarRoutes = [
+  // Define routes that don't require the header
+  const noHeaderRoutes = [
     "/login",
     "/signup",
     "/verify-email",
     "/forgot-password",
     "/reset-password",
     "/landing",
-    "/admin-login", // Added admin login to no sidebar routes
+    "/admin-login",
+    "/admin/forgot-password",
+    "/admin/reset-password-otp",
   ];
 
-  // Check if the current route needs the sidebar
-  const showSidebar = !noSidebarRoutes.some((route) =>
+  // Check if the current route needs the header
+  const showHeader = !noHeaderRoutes.some((route) =>
     location.pathname.startsWith(route)
   );
 
   if (isCheckingAuth) return <LoadingSpinner />;
 
   return (
-    <div className="flex h-screen bg-white text-gray-900 overflow-hidden">
-      {/* BG */}
-     
+    <div className="min-h-screen bg-white text-gray-900">
+      {/* Session Timeout Tracker */}
+      <SessionTimeoutTracker />
+      
+      {/* Header should be outside the Routes for consistent rendering */}
+      {showHeader && <Header />}
 
-      {/* Sidebar should be outside the Routes, but inside the main layout for consistent rendering */}
-      {showSidebar && <Sidebar />}
-
-      {/* Routing */}
-      <div className="flex-grow">
+      {/* Routing - Add pt-16 to account for fixed header */}
+      <div className={showHeader ? "pt-16" : ""}>
         <Routes>
           {/* Main authenticated routes */}
           <Route
@@ -206,6 +214,14 @@ function App() {
               </AdminRoute>
             }
           />
+          <Route
+            path="/admin/settings"
+            element={
+              <AdminRoute>
+                <AdminSettingsPage />
+              </AdminRoute>
+            }
+          />
 
           {/* Authentication routes */}
           <Route
@@ -233,6 +249,14 @@ function App() {
             }
           />
           <Route
+            path="/admin/forgot-password"
+            element={<AdminForgotPasswordPage />}
+          />
+          <Route
+            path="/admin/reset-password-otp"
+            element={<AdminResetPasswordOTPPage />}
+          />
+          <Route
             path="/landing"
             element={
               <RedirectAuthenticatedUser>
@@ -244,7 +268,7 @@ function App() {
           {/* Other public routes */}
           <Route path="/verify-email" element={<EmailVerificationPage />} />
           <Route path="/forgot-password" element={<ForgotPasswordPage />} />
-          <Route path="/reset-password/:token" element={<ResetPasswordPage />} />
+          <Route path="/reset-password" element={<ResetPasswordPage />} />
           <Route path="/login" element={<Navigate to="/login" replace />} />
 
           {/* Catch-all route */}

@@ -49,6 +49,8 @@ export const useAuthStore = create((set, get) => ({
 	isLoading: false,
 	isCheckingAuth: true,
 	message: null,
+	sessionTimeout: null,
+	lastActivity: Date.now(),
 
 	signup: async (email, password, name) => {
 		set({ isLoading: true, error: null });
@@ -75,6 +77,9 @@ export const useAuthStore = create((set, get) => ({
 				error: null,
 				isLoading: false,
 			});
+
+			// Start session timeout for regular users (30 minutes)
+			get().startSessionTimeout();
 
 			// Redirect based on user role
 			if (response.data.user && response.data.user.role === 'admin') {
@@ -126,6 +131,10 @@ export const useAuthStore = create((set, get) => ({
 		set({ isLoading: true, error: null });
 		try {
 			console.log('Logging out...');
+			
+			// Clear session timeout
+			get().clearSessionTimeout();
+			
 			await axios.post(`${API_URL}/logout`, {}, { withCredentials: true });
 			console.log('Logout successful');
 			set({ user: null, isAuthenticated: false, error: null, isLoading: false });
@@ -163,6 +172,11 @@ export const useAuthStore = create((set, get) => ({
 				isAuthenticated: true,
 				isCheckingAuth: false
 			});
+			
+			// Start session timeout if user is authenticated
+			if (response.data.user) {
+				get().startSessionTimeout();
+			}
 		} catch (error) {
 			console.error('Auth store: Authentication check error:', error);
 			set({
@@ -186,10 +200,10 @@ export const useAuthStore = create((set, get) => ({
 			throw error;
 		}
 	},
-	resetPassword: async (token, password) => {
+	resetPassword: async (otp, password) => {
 		set({ isLoading: true, error: null });
 		try {
-			const response = await axios.post(`${API_URL}/reset-password/${token}`, { password });
+			const response = await axios.post(`${API_URL}/reset-password`, { otp, password });
 			set({ message: response.data.message, isLoading: false });
 		} catch (error) {
 			set({
@@ -229,6 +243,45 @@ export const useAuthStore = create((set, get) => ({
 				error: error.response?.data?.message || "Error changing password",
 			});
 			throw error;
+		}
+	},
+
+	// Start session timeout - 30 minutes for regular users
+	startSessionTimeout: () => {
+		const state = get();
+		
+		// Clear any existing timeout
+		if (state.sessionTimeout) {
+			clearTimeout(state.sessionTimeout);
+		}
+
+		// Set timeout for 30 minutes (1800000 milliseconds)
+		const timeout = setTimeout(() => {
+			console.log('Session timeout - logging out user');
+			get().logout();
+			// Show notification
+			if (typeof window !== 'undefined' && window.toast) {
+				window.toast.error('Your session has expired. Please login again.');
+			}
+		}, 30 * 60 * 1000); // 30 minutes
+
+		set({ sessionTimeout: timeout, lastActivity: Date.now() });
+	},
+
+	// Reset session timeout on user activity
+	resetSessionTimeout: () => {
+		const state = get();
+		if (state.isAuthenticated) {
+			state.startSessionTimeout();
+		}
+	},
+
+	// Clear session timeout
+	clearSessionTimeout: () => {
+		const state = get();
+		if (state.sessionTimeout) {
+			clearTimeout(state.sessionTimeout);
+			set({ sessionTimeout: null });
 		}
 	},
 }));

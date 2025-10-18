@@ -6,6 +6,7 @@ import path from "path";
 import { fileURLToPath } from "url";
 import { connectDB } from "./db/connectDB.js";
 import authRoutes from "./routes/auth.route.js";
+import adminAuthRoutes from "./routes/admin.auth.route.js";
 import studentRoutes from "./routes/studentRoutes.js";
 import EditingStudentRoutes from "./routes/EditingStudentRoutes.js";
 import fromRoutes from "./routes/formRoutes.js";
@@ -71,6 +72,11 @@ if (process.env.NODE_ENV !== 'production') {
 app.use("/api/auth", authRoutes);
 
 if (process.env.NODE_ENV !== 'production') {
+  console.log('Registering route: /api/admin/auth');
+}
+app.use("/api/admin/auth", adminAuthRoutes);
+
+if (process.env.NODE_ENV !== 'production') {
   console.log('Registering route: /api/students');
 }
 app.use("/api/students", studentRoutes);
@@ -99,6 +105,7 @@ app.use("/api/users", userRoutes);
 app.get('/api/routes-status', (req, res) => {
   const routes = [
     { path: '/api/auth', status: 'registered' },
+    { path: '/api/admin/auth', status: 'registered' },
     { path: '/api/students', status: 'registered' },
     { path: '/api/EditingStudent', status: 'registered' },
     { path: '/api/form', status: 'registered' },

@@ -1,28 +1,30 @@
 import { useState, useEffect } from "react";
 import { motion } from "framer-motion";
 import { Mail, Lock, Loader, Shield } from "lucide-react";
-import { Link } from "react-router-dom";
+import { Link, useNavigate } from "react-router-dom";
 import Input from "../components/login/Input";
-import { useAuthStore } from "../store/authStore";
+import { useAdminAuthStore } from "../store/adminAuthStore";
 
 const AdminLoginPage = () => {
     const [email, setEmail] = useState("");
     const [password, setPassword] = useState("");
+    const navigate = useNavigate();
 
-    const { adminLogin, isLoading, error, isAuthenticated, user } = useAuthStore();
+    const { login, isLoading, error, isAuthenticated, admin } = useAdminAuthStore();
 
     // Redirect if already logged in as admin
     useEffect(() => {
-        if (isAuthenticated && user?.role === 'admin') {
-            window.location.href = '/admin';
+        if (isAuthenticated && admin?.role === 'admin') {
+            navigate('/admin/dashboard');
         }
-    }, [isAuthenticated, user]);
+    }, [isAuthenticated, admin, navigate]);
 
     const handleLogin = async (e) => {
         e.preventDefault();
         try {
-            await adminLogin(email, password);
-            // Redirect is handled in the adminLogin function
+            await login(email, password);
+            // Redirect to admin dashboard after successful login
+            navigate('/admin/dashboard');
         } catch (err) {
             console.error('Admin login error:', err);
         }
@@ -63,6 +65,15 @@ const AdminLoginPage = () => {
                             value={password}
                             onChange={(e) => setPassword(e.target.value)}
                         />
+
+                        <div className='flex justify-end mb-4'>
+                            <Link
+                                to='/admin/forgot-password'
+                                className='text-sm text-indigo-600 hover:text-indigo-700 hover:underline'
+                            >
+                                Forgot Password?
+                            </Link>
+                        </div>
 
                         {error && (
                             <p className='text-red-500 font-semibold mb-4'>{error}</p>

@@ -1,15 +1,16 @@
-import React, { useState, useEffect } from 'react';
+import { useState, useEffect } from 'react';
 import Header from '../common/Header';
 import { useAuthStore } from '../../store/authStore';
+import { useAdminAuthStore } from '../../store/adminAuthStore';
 
 const AdminLayout = ({ children }) => {
   const { user } = useAuthStore();
+  const { admin, isAuthenticated: isAdminAuthenticated } = useAdminAuthStore();
   const [isMobile, setIsMobile] = useState(window.innerWidth < 768);
   const [sidebarOpen, setSidebarOpen] = useState(true);
-  const [sidebarWidth, setSidebarWidth] = useState(sidebarOpen ? 256 : 80); // Default widths
 
-  // Check if user is admin
-  const isAdmin = user?.role === 'admin';
+  // Check if user is admin - check both stores
+  const isAdmin = (isAdminAuthenticated && admin && admin.role === 'admin') || (user?.role === 'admin');
 
   // Handle window resize
   useEffect(() => {
@@ -27,7 +28,6 @@ const AdminLayout = ({ children }) => {
   // Toggle sidebar
   const toggleSidebar = () => {
     setSidebarOpen(!sidebarOpen);
-    setSidebarWidth(!sidebarOpen ? 256 : 80);
   };
 
   return (
