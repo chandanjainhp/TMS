@@ -158,6 +158,21 @@ export const useAuthStore = create((set, get) => ({
 			throw error;
 		}
 	},
+
+	resendVerificationEmail: async () => {
+		set({ isLoading: true, error: null });
+		try {
+			const response = await axios.post(`${API_URL}/resend-verification-email`);
+			set({ isLoading: false, message: response.data.message });
+			return response.data;
+		} catch (error) {
+			set({ 
+				error: error.response?.data?.message || "Error resending verification email", 
+				isLoading: false 
+			});
+			throw error;
+		}
+	},
 	checkAuth: async () => {
 		set({ isCheckingAuth: true, error: null });
 		try {

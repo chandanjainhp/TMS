@@ -91,6 +91,38 @@ export const verifyEmail = async (req, res) => {
 	}
 };
 
+export const resendVerificationEmail = async (req, res) => {
+	try {
+		const userId = req.userId; // From verifyToken middleware
+		const user = await User.findById(userId);
+
+		if (!user) {
+			return res.status(404).json({ success: false, message: "User not found" });
+		}
+
+		if (user.isVerified) {
+			return res.status(400).json({ success: false, message: "Email already verified" });
+		}
+
+		// Generate new verification token
+		const verificationToken = Math.floor(100000 + Math.random() * 900000).toString();
+		user.verificationToken = verificationToken;
+		user.verificationTokenExpiresAt = Date.now() + 24 * 60 * 60 * 1000; // 24 hours
+		await user.save();
+
+		// Send verification email
+		await sendVerificationEmail(user.email, verificationToken);
+
+		res.status(200).json({
+			success: true,
+			message: "Verification email sent successfully"
+		});
+	} catch (error) {
+		console.log("error in resendVerificationEmail ", error);
+		res.status(500).json({ success: false, message: "Server error" });
+	}
+};
+
 export const login = async (req, res) => {
 	const { email, password } = req.body;
 	try {

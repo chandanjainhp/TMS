@@ -5,6 +5,7 @@ import {
 	logout,
 	signup,
 	verifyEmail,
+	resendVerificationEmail,
 	forgotPassword,
 	resetPassword,
 	checkAuth,
@@ -22,6 +23,7 @@ router.post("/AdminLoginPage", AdminLoginPage);
 router.post("/login", login);
 router.post("/logout", logout);
 router.post("/verify-email", verifyEmail);
+router.post("/resend-verification-email", verifyToken, resendVerificationEmail);
 router.post("/forgot-password", forgotPassword);
 router.post("/reset-password", resetPassword);
 router.post("/change-password", verifyToken, changePassword);
