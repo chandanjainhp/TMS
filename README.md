@@ -650,17 +650,4 @@ For support, email backupid849@gmail.com or open an issue in the GitHub reposito
 - [ ] Dark mode support
 - [ ] Mobile app (React Native)
 
----
 
-## 📚 Documentation
-
-Additional documentation can be found in:
-- [ADMIN_AUTH_COMPLETE_FIX.md](ADMIN_AUTH_COMPLETE_FIX.md) - Admin authentication fixes
-- [PASSWORD_RESET_FLOW.md](PASSWORD_RESET_FLOW.md) - Password reset implementation
-- [SESSION_TIMEOUT_FEATURE.md](SESSION_TIMEOUT_FEATURE.md) - Session timeout details
-- **[INDUSTRY_STANDARD_CHECKLIST.md](INDUSTRY_STANDARD_CHECKLIST.md)** - Complete guide to industry-standard enhancements
-- **[WHAT_TO_DO_DIFFERENTLY.md](WHAT_TO_DO_DIFFERENTLY.md)** - ⚠️ Critical refactoring guide with architectural improvements
-
----
-
-**Made with ❤️ by the TMS Team**
