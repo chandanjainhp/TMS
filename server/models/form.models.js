@@ -20,11 +20,15 @@ mongoose.connection.on('disconnected', () => {
 // Schema definition
 const recordSchema = new mongoose.Schema({
   department: String,
+  branch: String,
   section: String,
   year: String,
+  semester: String,
+  section: String,
+  subject: String,
   teacherName: String,
   aiTestDate: String,
-  csvData: Object, 
+  csvData: Object,
 }, { timestamps: true });
 
 // Create model

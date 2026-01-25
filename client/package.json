@@ -23,9 +23,9 @@
     "dotenv": "^16.4.7",
     "file-saver": "^2.0.5",
     "framer-motion": "^11.3.21",
-    "jspdf-autotable": "^3.8.4",
+    "jspdf-autotable": "^5.0.7",
     "lucide-react": "^0.424.0",
-    "nodemailer": "^6.9.16",
+    "nodemailer": "^7.0.12",
     "papaparse": "^5.5.2",
     "react": "^18.3.1",
     "react-csv": "^2.2.2",
@@ -34,7 +34,7 @@
     "react-icons": "^5.4.0",
     "react-router-dom": "^6.26.0",
     "styled-components": "^6.1.13",
-    "xlsx": "^0.18.5",
+    "xlsx": "https://cdn.sheetjs.com/xlsx-latest/xlsx-latest.tgz",
     "zustand": "^4.5.4"
   },
   "devDependencies": {
@@ -48,6 +48,6 @@
     "eslint-plugin-react-refresh": "^0.4.7",
     "postcss": "^8.4.40",
     "tailwindcss": "^3.4.7",
-    "vite": "^5.3.4"
+    "vite": "^7.3.1"
   }
 }

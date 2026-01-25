@@ -1,44 +1,79 @@
-import { useState } from 'react';
+import { useState, useRef, useEffect } from 'react';
 import axios from 'axios';
-import { Link } from 'react-router-dom';
+import { motion, AnimatePresence } from 'framer-motion';
+import { useAuthStore } from '../../store/authStore';
+import {
+  CloudUpload,
+  CheckCircle2,
+  AlertOctagon,
+  UserCircle2,
+  CalendarRange,
+  Users2,
+  Building2,
+  Network,
+  Scroll,
+  BookOpenCheck,
+  CalendarClock,
+  ClipboardList
+} from 'lucide-react';
 
 const DepartmentUploadForm = () => {
+  const { user } = useAuthStore();
+
   const [formData, setFormData] = useState({
     department: '',
     branch: '',
     section: '',
     year: '',
     semester: '',
+    subject: '',
     teacherName: '',
     aiTestDate: '',
+    testType: 'A1',
     csvFile: null
   });
+
+  // Auto-populate teacher name from logged-in user
+  useEffect(() => {
+    if (user && user.name) {
+      setFormData(prev => ({
+        ...prev,
+        teacherName: user.name
+      }));
+    }
+  }, [user]);
+
   const [isUploading, setIsUploading] = useState(false);
   const [showSuccess, setShowSuccess] = useState(false);
   const [error, setError] = useState(null);
   const [debugInfo, setDebugInfo] = useState(null);
+  const [dragActive, setDragActive] = useState(false);
+  const fileInputRef = useRef(null);
 
   const departments = [
-    'Physics',
-    'Mathematics',
-    'Electronics',
-    'Computer Science',
-    'Chemistry',
-    'Biology',
-   
+    'Physics', 'Mathematics', 'Electronics', 'Computer Science', 'Chemistry', 'Biology'
   ];
 
   const branches = [
-    'PMCS',
-    'BCA',
-    'PME',
-    'PCM'
+    'PMCS', 'BCA', 'PME', 'PCM'
   ];
 
-  // Generate sections A through Z
-  const sections = Array.from({ length: 26 }, (_, i) =>
-    String.fromCharCode(65 + i)
-  );
+  const getSubjectsByBranch = (branch) => {
+    switch (branch) {
+      case 'PMCS':
+        return ['Physics', 'Mathematics', 'Computer Science', 'Electronics'];
+      case 'BCA':
+        return ['Programming in C', 'Web Development', 'Data Structures', 'Database Management', 'Networking'];
+      case 'PME':
+        return ['Physics', 'Mathematics', 'Electronics'];
+      case 'PCM':
+        return ['Physics', 'Chemistry', 'Mathematics'];
+      default:
+        return [];
+    }
+  };
+
+  const sections = Array.from({ length: 26 }, (_, i) => String.fromCharCode(65 + i));
 
   const handleChange = (e) => {
     const { name, value, files } = e.target;
@@ -46,88 +81,62 @@ const DepartmentUploadForm = () => {
       ...prev,
       [name]: files ? files[0] : value
     }));
-    setError(null);
-    setDebugInfo(null);
+    if (files && files[0]) setError(null);
+    else if (!files) setError(null);
+  };
+
+  const handleDrag = (e) => {
+    e.preventDefault();
+    e.stopPropagation();
+    if (e.type === "dragenter" || e.type === "dragover") {
+      setDragActive(true);
+    } else if (e.type === "dragleave") {
+      if (e.currentTarget.contains(e.relatedTarget)) return;
+      setDragActive(false);
+    }
+  };
+
+  const handleDrop = (e) => {
+    e.preventDefault();
+    e.stopPropagation();
+    setDragActive(false);
+
+    if (e.dataTransfer.files && e.dataTransfer.files[0]) {
+      const file = e.dataTransfer.files[0];
+      if (file.name.toLowerCase().endsWith('.csv') || file.type === "text/csv" || file.type === "application/vnd.ms-excel") {
+        setFormData(prev => ({ ...prev, csvFile: file }));
+        setError(null);
+      } else {
+        setError("Please upload a valid CSV file.");
+      }
+    }
   };
 
   const validateForm = () => {
-    // Check if all required fields are filled
-    if (!formData.department.trim()) {
-      setError('Please select a department');
-      return false;
-    }
+    if (!formData.department) return setError('Please select a department');
+    if (!formData.branch) return setError('Please select a branch');
+    if (!formData.year) return setError('Please select a year');
+    if (!formData.semester) return setError('Please select a semester');
+    if (!formData.subject) return setError('Please select a subject');
+    if (!formData.teacherName.trim()) return setError('Please enter teacher name');
+    if (!/^[a-zA-Z\s.\-']+$/.test(formData.teacherName.trim())) return setError('Teacher name should only contain letters, spaces, dots, hyphens, or apostrophes');
+    if (!formData.section) return setError('Please select a section');
+    if (!formData.aiTestDate) return setError('Please select AI test date');
 
-    if (!formData.branch.trim()) {
-      setError('Please select a branch');
-      return false;
-    }
-
-    if (!formData.year.trim()) {
-      setError('Please select a year');
-      return false;
-    }
-
-    if (!formData.semester) {
-      setError('Please select a semester');
-      return false;
-    }
-
-    if (!formData.teacherName.trim()) {
-      setError('Please enter teacher name');
-      return false;
-    }
-
-    // Validate teacher name (only letters and spaces)
-    if (!/^[a-zA-Z\s]+$/.test(formData.teacherName.trim())) {
-      setError('Teacher name should only contain letters and spaces');
-      return false;
-    }
-
-    if (!formData.section.trim()) {
-      setError('Please select a section');
-      return false;
-    }
-
-    if (!formData.aiTestDate) {
-      setError('Please select AI test conducted date');
-      return false;
-    }
-
-    // Validate test date is not in the future
     const testDate = new Date(formData.aiTestDate);
     const today = new Date();
-    today.setHours(23, 59, 59, 999); // Set to end of today
-    
-    if (testDate > today) {
-      setError('Test date cannot be in the future');
-      return false;
-    }
+    today.setHours(23, 59, 59, 999);
+    if (testDate > today) return setError('Test date cannot be in the future');
 
-    // Validate CSV file
-    if (!formData.csvFile) {
-      setError('Please upload a CSV file');
-      return false;
-    }
-
-    const fileName = formData.csvFile.name.toLowerCase();
-    if (!fileName.endsWith('.csv')) {
-      setError('Only CSV files are allowed');
-      return false;
-    }
-
-    // Check file size (max 10MB)
-    const maxSize = 10 * 1024 * 1024; // 10MB in bytes
-    if (formData.csvFile.size > maxSize) {
-      setError('File size should not exceed 10MB');
-      return false;
-    }
+    if (!formData.csvFile) return setError('Please upload a CSV file');
+    if (!formData.csvFile.name.toLowerCase().endsWith('.csv') && formData.csvFile.type !== "text/csv") return setError('Only CSV files are allowed');
+    if (formData.csvFile.size > 10 * 1024 * 1024) return setError('File size should not exceed 10MB');
 
     return true;
   };
 
   const handleSubmit = async (e) => {
     e.preventDefault();
-
     if (!validateForm()) return;
 
     setIsUploading(true);
@@ -136,348 +145,316 @@ const DepartmentUploadForm = () => {
 
     try {
       const formDataToSend = new FormData();
-      formDataToSend.append('department', formData.department);
-      formDataToSend.append('branch', formData.branch);
-      formDataToSend.append('section', formData.section);
-      formDataToSend.append('year', formData.year);
-      formDataToSend.append('semester', formData.semester);
-      formDataToSend.append('teacherName', formData.teacherName);
-      formDataToSend.append('aiTestDate', formData.aiTestDate);
-      formDataToSend.append('csvFile', formData.csvFile);
-
-      // Log FormData for debugging
-      const formDataLog = {};
-      for (let [key, value] of formDataToSend.entries()) {
-        formDataLog[key] = value instanceof File ?
-          { name: value.name, size: value.size, type: value.type } :
-          value;
-      }
-      console.log('FormData being sent:', formDataLog);
+      Object.keys(formData).forEach(key => {
+        formDataToSend.append(key, formData[key]);
+      });
 
       const response = await axios.post(
         'http://localhost:5000/api/form',
         formDataToSend,
         {
           withCredentials: true,
-          headers: {
-            'Content-Type': 'multipart/form-data',
-          },
-          // Add timeout and onUploadProgress if needed
+          headers: { 'Content-Type': 'multipart/form-data' },
           timeout: 30000,
-          onUploadProgress: progressEvent => {
-            const percentCompleted = Math.round(
-              (progressEvent.loaded * 100) / progressEvent.total
-            );
-            console.log(`Upload progress: ${percentCompleted}%`);
-          }
         }
       );
 
       setShowSuccess(true);
       setTimeout(() => setShowSuccess(false), 3000);
-
-      // Reset form
-      setFormData({
-        department: '',
-        branch: '',
-        section: '',
-        year: '',
-        semester: '',
-        teacherName: '',
-        aiTestDate: '',
-        csvFile: null
-      });
+      setFormData(prev => ({
+        ...prev,
+        csvFile: null,
+        department: '', branch: '', section: '', year: '', semester: '', subject: '', teacherName: user?.name || '', aiTestDate: '', testType: 'A1'
+      }));
 
     } catch (err) {
-      let errorMessage = 'An error occurred during upload';
-      let debugData = null;
-
-      if (err.response) {
-        // Server responded with error status
-        debugData = {
-          status: err.response.status,
-          data: err.response.data,
-          headers: err.response.headers
-        };
-
-        if (err.response.data?.message) {
-          errorMessage = `Server error: ${err.response.data.message}`;
-        } else {
-          errorMessage = `Server returned status ${err.response.status}`;
-        }
-      } else if (err.request) {
-        // Request was made but no response received
-        errorMessage = 'No response from server. Please check your connection.';
-        debugData = { request: err.request };
-      } else {
-        // Something happened in setting up the request
-        errorMessage = `Request error: ${err.message}`;
-      }
-
-      setError(errorMessage);
-      setDebugInfo(debugData);
-      console.error('Upload error:', err);
-      console.error('Debug info:', debugData);
-
+      console.error(err);
+      const msg = err.response?.data?.message || err.message || 'Upload failed';
+      setError(msg);
+      setDebugInfo(err.response || {});
     } finally {
       setIsUploading(false);
     }
   };
 
+  const onButtonClick = () => {
+    fileInputRef.current.click();
+  };
+
+  const InputField = ({ label, icon: Icon, children }) => (
+    <div className="space-y-1">
+      <label className="text-xs font-semibold text-gray-500 uppercase flex items-center gap-1.5 ml-1">
+        <Icon className="w-3.5 h-3.5" />
+        {label}
+      </label>
+      <div className="relative">
+        {children}
+      </div>
+    </div>
+  );
+
   return (
-    <div className="min-h-screen bg-white p-4 sm:p-6 md:p-8 text-black flex flex-col items-center justify-center">
-      <div className="w-full max-w-md sm:max-w-lg md:max-w-xl lg:max-w-2xl mx-auto bg-white text-black rounded-xl shadow-md overflow-hidden p-6 sm:p-8 border border-gray-200">
-        <div className="flex justify-between items-center mb-6">
-          <h2 className="text-2xl font-bold text-black">Upload Student Records</h2>
-          
+    <div className="min-h-screen bg-white p-4 sm:p-6 lg:p-8 pt-20">
+      <div className="max-w-7xl mx-auto space-y-8">
+
+        {/* Header - Simple & Clean */}
+        <div className="flex flex-col md:flex-row md:items-end justify-between gap-4 border-b border-gray-100 pb-5">
+          <div>
+            <h1 className="text-3xl font-bold text-gray-900 tracking-tight">Upload Records</h1>
+            <p className="text-gray-500 mt-1">Import class data and AI test results securely to the repository.</p>
+          </div>
+          <div className="hidden md:block text-right">
+            <div className="text-xs font-mono text-gray-400">SESSION ID: {Math.random().toString(36).substr(2, 9).toUpperCase()}</div>
+          </div>
         </div>
 
-        {/* Error Message */}
-        {error && (
-          <div className="mb-4 p-3 bg-red-100 text-red-700 border border-red-400 rounded-md">
-            <div className="font-bold">{error}</div>
-            {debugInfo && (
-              <details className="mt-2 text-sm opacity-75">
-                <summary>Technical details</summary>
-                <pre className="whitespace-pre-wrap mt-1">
-                  {JSON.stringify(debugInfo, null, 2)}
-                </pre>
-              </details>
-            )}
-          </div>
-        )}
+        <form onSubmit={handleSubmit} className="space-y-8">
 
-        <form onSubmit={handleSubmit} className="space-y-4">
-          {/* Department Dropdown */}
-          <div>
-            <label htmlFor="department" className="block text-sm font-medium text-black mb-1">
-              Department
-            </label>
-            <select
-              id="department"
-              name="department"
-              value={formData.department}
-              onChange={handleChange}
-              required
-              className="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm bg-white text-black focus:outline-none focus:ring-indigo-500 focus:border-indigo-500"
-            >
-              <option value="">Select a department</option>
-              {departments.map((dept) => (
-                <option key={dept} value={dept}>
-                  {dept}
-                </option>
-              ))}
-            </select>
-          </div>
+          {/* Main Form Grid */}
+          <div className="grid grid-cols-1 md:grid-cols-3 lg:grid-cols-4 gap-x-6 gap-y-6">
 
-          {/* Branch Dropdown */}
-          <div>
-            <label htmlFor="branch" className="block text-sm font-medium text-black mb-1">
-              Branch
-            </label>
-            <select
-              id="branch"
-              name="branch"
-              value={formData.branch}
-              onChange={handleChange}
-              required
-              className="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm bg-white text-black focus:outline-none focus:ring-indigo-500 focus:border-indigo-500"
-            >
-              <option value="">Select a branch</option>
-              {branches.map((branch) => (
-                <option key={branch} value={branch}>
-                  {branch}
-                </option>
-              ))}
-            </select>
-          </div>
-
-          {/* Section Dropdown */}
-
-          {/* Year Dropdown */}
-          <div>
-            <label htmlFor="year" className="block text-sm font-medium text-black mb-1">
-              Year
-            </label>
-            <select
-              id="year"
-              name="year"
-              value={formData.year}
-              onChange={handleChange}
-              required
-              className="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm bg-white text-black focus:outline-none focus:ring-indigo-500 focus:border-indigo-500"
-            >
-              <option value="">Select Year</option>
-              <option value="1">1</option>
-              <option value="2">2</option>
-              <option value="3">3</option>
-            </select>
-          </div>
-
-          {/* Semester Dropdown */}
-          <div>
-            <label htmlFor="semester" className="block text-sm font-medium text-black mb-1">
-              Semester
-            </label>
-            <select
-              id="semester"
-              name="semester"
-              value={formData.semester}
-              onChange={handleChange}
-              required
-              className="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm bg-white text-black focus:outline-none focus:ring-indigo-500 focus:border-indigo-500"
-            >
-              <option value="">Select Semester</option>
-              {[...Array(6)].map((_, i) => (
-                <option key={i + 1} value={i + 1}>{i + 1}</option>
-              ))}
-            </select>
-          </div>
-
-          {/* Teacher Name */}
-          <div>
-            <label htmlFor="teacherName" className="block text-sm font-medium text-black mb-1">
-              Teacher Name
-            </label>
-            <input
-              type="text"
-              id="teacherName"
-              name="teacherName"
-              placeholder="Enter teacher's name"
-              value={formData.teacherName}
-              onChange={handleChange}
-              required
-              className="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm bg-white text-black focus:outline-none focus:ring-indigo-500 focus:border-indigo-500"
-            />
-          </div>
-
-          <div>
-            <label htmlFor="section" className="block text-sm font-medium text-black mb-1">
-              Section
-            </label>
-            <select
-              id="section"
-              name="section"
-              value={formData.section}
-              onChange={handleChange}
-              required
-              className="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm bg-white text-black focus:outline-none focus:ring-indigo-500 focus:border-indigo-500"
-            >
-              <option value="">Select a section</option>
-              {sections.map((sec) => (
-                <option key={sec} value={sec}>
-                  {sec}
-                </option>
-              ))}
-            </select>
-          </div>
-          {/* AI Test Date */}
-          <div>
-            <label htmlFor="aiTestDate" className="block text-sm font-medium text-black mb-1">
-              AI Test Conducted Date
-            </label>
-            <input
-              type="date"
-              id="aiTestDate"
-              name="aiTestDate"
-              value={formData.aiTestDate}
-              onChange={handleChange}
-              required
-              className="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm bg-white text-black focus:outline-none focus:ring-indigo-500 focus:border-indigo-500"
-            />
-          </div>
-
-          {/* CSV File Upload */}
-          <div>
-            <label htmlFor="csvFile" className="block text-sm font-medium text-black mb-1">
-              Upload Student Data CSV
-            </label>
-            <div className="mt-1 flex items-center">
-              <input
-                type="file"
-                id="csvFile"
-                name="csvFile"
-                accept=".csv"
+            <InputField label="Department" icon={Building2}>
+              <select
+                name="department"
+                value={formData.department}
                 onChange={handleChange}
-                required
-                className="w-full text-sm text-gray-700 file:mr-4 file:py-2 file:px-4 file:rounded-md file:border-0 file:text-sm file:font-semibold file:bg-gray-200 file:text-black hover:file:bg-gray-300"
+                className="w-full px-4 py-3 bg-gray-50 border border-gray-200 rounded-xl focus:ring-2 focus:ring-indigo-500 focus:border-transparent transition-all outline-none appearance-none font-medium text-gray-700"
+              >
+                <option value="">Select Dept</option>
+                {departments.map(d => <option key={d} value={d}>{d}</option>)}
+              </select>
+            </InputField>
+
+            <InputField label="Branch" icon={Network}>
+              <select
+                name="branch"
+                value={formData.branch}
+                onChange={handleChange}
+                className="w-full px-4 py-3 bg-gray-50 border border-gray-200 rounded-xl focus:ring-2 focus:ring-indigo-500 focus:border-transparent transition-all outline-none appearance-none font-medium text-gray-700"
+              >
+                <option value="">Select Branch</option>
+                {branches.map(b => <option key={b} value={b}>{b}</option>)}
+              </select>
+            </InputField>
+
+            <InputField label="Subject" icon={BookOpenCheck}>
+              <select
+                name="subject"
+                value={formData.subject || ''}
+                onChange={handleChange}
+                disabled={!formData.branch}
+                className="w-full px-4 py-3 bg-gray-50 border border-gray-200 rounded-xl focus:ring-2 focus:ring-indigo-500 focus:border-transparent transition-all outline-none appearance-none disabled:opacity-50 font-medium text-gray-700"
+              >
+                <option value="">Select Subject</option>
+                {getSubjectsByBranch(formData.branch).map(s => <option key={s} value={s}>{s}</option>)}
+              </select>
+            </InputField>
+
+            <InputField label="Teacher Name" icon={UserCircle2}>
+              <input
+                type="text"
+                name="teacherName"
+                placeholder="Dr. Smith"
+                value={formData.teacherName}
+                onChange={handleChange}
+                className="w-full px-4 py-3 bg-gray-50 border border-gray-200 rounded-xl focus:ring-2 focus:ring-indigo-500 focus:border-transparent transition-all outline-none font-medium text-gray-700"
               />
+            </InputField>
+
+            <InputField label="Year" icon={CalendarRange}>
+              <select
+                name="year"
+                value={formData.year}
+                onChange={handleChange}
+                className="w-full px-4 py-3 bg-gray-50 border border-gray-200 rounded-xl focus:ring-2 focus:ring-indigo-500 focus:border-transparent transition-all outline-none appearance-none font-medium text-gray-700"
+              >
+                <option value="">Select Year</option>
+                {[1, 2, 3].map(y => <option key={y} value={y}>{y}</option>)}
+              </select>
+            </InputField>
+
+            <InputField label="Semester" icon={Scroll}>
+              <select
+                name="semester"
+                value={formData.semester}
+                onChange={handleChange}
+                className="w-full px-4 py-3 bg-gray-50 border border-gray-200 rounded-xl focus:ring-2 focus:ring-indigo-500 focus:border-transparent transition-all outline-none appearance-none font-medium text-gray-700"
+              >
+                <option value="">Select Sem</option>
+                {[1, 2, 3, 4, 5, 6].map(s => <option key={s} value={s}>{s}</option>)}
+              </select>
+            </InputField>
+
+            <InputField label="Section" icon={Users2}>
+              <select
+                name="section"
+                value={formData.section}
+                onChange={handleChange}
+                className="w-full px-4 py-3 bg-gray-50 border border-gray-200 rounded-xl focus:ring-2 focus:ring-indigo-500 focus:border-transparent transition-all outline-none appearance-none font-medium text-gray-700"
+              >
+                <option value="">Section</option>
+                {sections.map(s => <option key={s} value={s}>{s}</option>)}
+              </select>
+            </InputField>
+
+            <div className="flex gap-4">
+              <div className="flex-1">
+                <InputField label="Test Date" icon={CalendarClock}>
+                  <input
+                    type="date"
+                    name="aiTestDate"
+                    value={formData.aiTestDate}
+                    onChange={handleChange}
+                    className="w-full px-4 py-3 bg-gray-50 border border-gray-200 rounded-xl focus:ring-2 focus:ring-indigo-500 focus:border-transparent transition-all outline-none font-medium text-gray-700"
+                  />
+                </InputField>
+              </div>
+              <div className="flex-1">
+                <InputField label="Test Type" icon={ClipboardList}>
+                  <div className="flex bg-gray-100 p-1 rounded-xl h-[46px]">
+                    {['A1', 'A2'].map((type) => (
+                      <button
+                        key={type}
+                        type="button"
+                        onClick={() => setFormData(prev => ({ ...prev, testType: type }))}
+                        className={`flex-1 rounded-lg text-sm font-bold transition-all ${formData.testType === type
+                          ? 'bg-white text-indigo-600 shadow-sm'
+                          : 'text-gray-400 hover:text-gray-600'
+                          }`}
+                      >
+                        {type}
+                      </button>
+                    ))}
+                  </div>
+                </InputField>
+              </div>
             </div>
-            {formData.csvFile && (
-              <p className="mt-1 text-xs text-gray-500">
-                Selected file: {formData.csvFile.name} ({Math.round(formData.csvFile.size / 1024)} KB)
-              </p>
-            )}
-            <p className="mt-1 text-xs text-gray-500">
-              Upload a CSV file containing student records with columns: ID, Name, Email, Grade
-            </p>
+
           </div>
 
-          {/* Test Buttons */}
-          <div className="flex flex-col sm:flex-row gap-4 mt-4">
-            <button
-              type="button"
-              className="px-4 py-2 bg-blue-500 text-white rounded-md shadow hover:bg-blue-600 focus:outline-none focus:ring-2 focus:ring-blue-500"
-              onClick={() => console.log('A1 Test Selected')}
-            >
-              A1 Test
-            </button>
-            <button
-              type="button"
-              className="px-4 py-2 bg-blue-500 text-white rounded-md shadow hover:bg-blue-600 focus:outline-none focus:ring-2 focus:ring-blue-500"
-              onClick={() => console.log('A2 Test Selected')}
-            >
-              A2 Test
-            </button>
+          {/* Upload & Submit Section */}
+          <div className="grid grid-cols-1 lg:grid-cols-4 gap-6">
+            <div className="lg:col-span-3">
+              <div
+                className={`relative border-2 border-dashed rounded-2xl p-8 transition-all text-center cursor-pointer group ${dragActive
+                  ? 'border-indigo-500 bg-indigo-50'
+                  : formData.csvFile
+                    ? 'border-emerald-500 bg-emerald-50/30'
+                    : 'border-gray-200 hover:border-indigo-400 hover:bg-gray-50'
+                  }`}
+                onDragEnter={handleDrag}
+                onDragLeave={handleDrag}
+                onDragOver={handleDrag}
+                onDrop={handleDrop}
+                onClick={onButtonClick}
+              >
+                <input
+                  ref={fileInputRef}
+                  type="file"
+                  name="csvFile"
+                  accept=".csv"
+                  onChange={handleChange}
+                  className="hidden"
+                />
+
+                <div className="flex flex-row items-center justify-center gap-4 pointer-events-none">
+                  <div className={`p-4 rounded-xl transition-colors ${formData.csvFile ? 'bg-emerald-100 text-emerald-600' : 'bg-gray-100 text-gray-400 group-hover:text-indigo-600 group-hover:bg-indigo-50'}`}>
+                    {formData.csvFile ? <CheckCircle2 className="w-8 h-8" /> : <CloudUpload className="w-8 h-8" />}
+                  </div>
+
+                  <div className="text-left">
+                    {formData.csvFile ? (
+                      <div>
+                        <p className="font-bold text-gray-900 text-lg">{formData.csvFile.name}</p>
+                        <p className="text-sm text-gray-500">{(formData.csvFile.size / 1024).toFixed(2)} KB • Ready to upload</p>
+                      </div>
+                    ) : (
+                      <div>
+                        <p className="font-bold text-gray-700 text-lg group-hover:text-indigo-700 transition-colors">
+                          Drop CSV file here
+                        </p>
+                        <p className="text-sm text-gray-400">or click to browse • Max 10MB</p>
+                      </div>
+                    )}
+                  </div>
+                </div>
+                {formData.csvFile && (
+                  <button
+                    type="button"
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      setFormData(prev => ({ ...prev, csvFile: null }));
+                      if (fileInputRef.current) fileInputRef.current.value = '';
+                    }}
+                    className="absolute top-4 right-4 text-xs font-bold text-rose-500 hover:text-rose-700 bg-white px-2 py-1 rounded-md shadow-sm border border-rose-100"
+                  >
+                    REMOVE
+                  </button>
+                )}
+              </div>
+            </div>
+
+            <div className="lg:col-span-1 flex flex-col justify-end">
+              {/* Error Display */}
+              <AnimatePresence>
+                {error && (
+                  <motion.div
+                    initial={{ opacity: 0, y: 10 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    exit={{ opacity: 0, y: 10 }}
+                    className="mb-4 bg-rose-50 border border-rose-200 text-rose-600 p-3 rounded-xl flex items-start gap-2 text-sm font-medium"
+                  >
+                    <AlertOctagon className="w-4 h-4 flex-shrink-0 mt-0.5" />
+                    <div>{error}</div>
+                  </motion.div>
+                )}
+              </AnimatePresence>
+
+              <button
+                type="submit"
+                disabled={isUploading}
+                className={`w-full py-4 rounded-xl text-white font-bold text-lg hover:shadow-xl hover:translate-y-[-2px] transition-all flex items-center justify-center gap-3 ${isUploading
+                  ? 'bg-gray-300 cursor-not-allowed'
+                  : 'bg-indigo-600 hover:bg-indigo-700 shadow-indigo-200'
+                  }`}
+              >
+                {isUploading ? (
+                  <>
+                    <div className="w-5 h-5 border-2 border-white/30 border-t-white rounded-full animate-spin" />
+                    <span>Processing...</span>
+                  </>
+                ) : (
+                  <>
+                    <span>Upload Data</span>
+                    <CheckCircle2 className="w-5 h-5" />
+                  </>
+                )}
+              </button>
+            </div>
           </div>
 
-          {/* Submit Button */}
-          <div className="pt-2">
-            <button
-              type="submit"
-              disabled={isUploading}
-              className={`w-full flex justify-center py-2 px-4 border border-transparent rounded-md shadow-sm text-sm font-medium ${isUploading ? 'bg-gray-300 text-gray-500' : 'bg-green-600 hover:bg-green-700 text-white'} focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-green-500`}
-            >
-              {isUploading ? (
-                <span className="flex items-center">
-                  <svg className="animate-spin -ml-1 mr-2 h-4 w-4 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
-                    <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
-                    <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
-                  </svg>
-                  Uploading...
-                </span>
-              ) : 'Upload Records'}
-            </button>
-          </div>
         </form>
       </div>
 
-      {/* Success Popup */}
-      {showSuccess && (
-        <div className="fixed bottom-4 left-1/2 transform -translate-x-1/2 bg-green-600 text-white px-4 py-2 rounded-md shadow-lg flex items-center space-x-2 animate-fade-in-up">
-          <svg className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
-          </svg>
-          <span>Records uploaded successfully!</span>
-        </div>
-      )}
-
-      {/* Animation styles */}
-      <style jsx="true">{`
-        @keyframes fadeInUp {
-          from {
-            opacity: 0;
-            transform: translate(-50%, 20px);
-          }
-          to {
-            opacity: 1;
-            transform: translate(-50%, 0);
-          }
-        }
-        .animate-fade-in-up {
-          animation: fadeInUp 0.3s ease-out forwards;
-        }
-      `}</style>
+      {/* Success Notification */}
+      <AnimatePresence>
+        {showSuccess && (
+          <motion.div
+            initial={{ opacity: 0, y: 50 }}
+            animate={{ opacity: 1, y: 0 }}
+            exit={{ opacity: 0, y: 50 }}
+            className="fixed bottom-6 right-6 bg-emerald-600 text-white px-6 py-4 rounded-2xl shadow-2xl flex items-center gap-4 z-50 ring-4 ring-emerald-100"
+          >
+            <div className="bg-white/20 p-2 rounded-full">
+              <CheckCircle2 className="w-6 h-6" />
+            </div>
+            <div>
+              <h4 className="font-bold text-lg">Success!</h4>
+              <p className="text-emerald-100">Student records have been uploaded.</p>
+            </div>
+          </motion.div>
+        )}
+      </AnimatePresence>
     </div>
   );
 };

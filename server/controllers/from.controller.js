@@ -5,14 +5,14 @@ import Record from '../models/form.models.js';
 
 export const uploadRecords = async (req, res) => {
   try {
-    const { department, branch, section, year, semester, teacherName, aiTestDate } = req.body;
+    const { department, branch, section, year, semester, subject, teacherName, aiTestDate } = req.body;
     const csvFile = req.file;
 
     // Validation
-    if (!department || !branch || !section || !year || !semester || !teacherName || !aiTestDate) {
+    if (!department || !branch || !section || !year || !semester || !subject || !teacherName || !aiTestDate) {
       return res.status(400).json({
         success: false,
-        message: 'All fields are required: department, branch, section, year, semester, teacherName, aiTestDate',
+        message: 'All fields are required: department, branch, section, year, semester, subject, teacherName, aiTestDate',
       });
     }
 
@@ -38,6 +38,7 @@ export const uploadRecords = async (req, res) => {
             section,
             year,
             semester,
+            subject,
             teacherName,
             aiTestDate,
             csvData: row,
@@ -194,6 +195,68 @@ export const getRecords = async (req, res) => {
     res.status(500).json({
       success: false,
       message: 'Error retrieving records',
+      error: error.message
+    });
+  }
+};
+
+// Update a record by ID
+export const updateRecord = async (req, res) => {
+  try {
+    // Check authentication
+    if (!req.userId) {
+      return res.status(401).json({
+        success: false,
+        message: 'Authentication required'
+      });
+    }
+
+    const { id } = req.params;
+    const updates = req.body;
+
+    if (!id) {
+      return res.status(400).json({
+        success: false,
+        message: 'Record ID is required'
+      });
+    }
+
+    // Find the record first to check existence
+    const record = await Record.findById(id);
+    if (!record) {
+      return res.status(404).json({
+        success: false,
+        message: 'Record not found'
+      });
+    }
+
+    // Update fields
+    // We handle top-level fields and nested csvData fields
+    if (updates.department) record.department = updates.department;
+    if (updates.branch) record.branch = updates.branch;
+    if (updates.section) record.section = updates.section;
+    if (updates.year) record.year = updates.year;
+    if (updates.semester) record.semester = updates.semester;
+    if (updates.teacherName) record.teacherName = updates.teacherName;
+    if (updates.aiTestDate) record.aiTestDate = updates.aiTestDate;
+
+    // Handle csvData updates - merge with existing data
+    if (updates.csvData) {
+      record.csvData = { ...record.csvData, ...updates.csvData };
+    }
+
+    const updatedRecord = await record.save();
+
+    res.json({
+      success: true,
+      message: 'Record updated successfully',
+      data: updatedRecord
+    });
+  } catch (error) {
+    console.error('Error updating record:', error);
+    res.status(500).json({
+      success: false,
+      message: 'Error updating record',
       error: error.message
     });
   }

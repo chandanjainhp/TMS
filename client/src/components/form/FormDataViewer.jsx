@@ -1,9 +1,35 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useMemo } from 'react';
 import axios from 'axios';
 import { CSVLink } from 'react-csv';
 import jsPDF from 'jspdf';
 import autoTable from 'jspdf-autotable';
 import { format } from 'date-fns';
+import { motion, AnimatePresence } from 'framer-motion';
+import {
+  Search,
+  ListFilter,
+  Trash,
+  ScanEye,
+  FileText,
+  Download,
+  ChevronLeft,
+  ChevronRight,
+  X,
+  FileSpreadsheet,
+  CalendarRange,
+  Building2,
+  Network,
+  Scroll,
+  Pencil,
+  Save,
+  RotateCcw,
+  BookOpenCheck,
+  Users2,
+  UserCircle2,
+  ClipboardList,
+  AlertOctagon,
+  CheckCircle2
+} from 'lucide-react';
 
 const FormDataViewer = () => {
   const [records, setRecords] = useState([]);
@@ -13,304 +39,285 @@ const FormDataViewer = () => {
   const [filters, setFilters] = useState({
     department: '',
     section: '',
-    year: ''
+    year: '',
+    branch: ''
   });
   const [currentPage, setCurrentPage] = useState(1);
   const [selectedRecord, setSelectedRecord] = useState(null);
   const [showDataModal, setShowDataModal] = useState(false);
-  const itemsPerPage = 10;
 
-  // Fetch records from the server
+  // Edit State
+  const [showEditModal, setShowEditModal] = useState(false);
+  const [editingRecord, setEditingRecord] = useState(null);
+  const [editForm, setEditForm] = useState({});
+
+  const itemsPerPage = 8;
+
   useEffect(() => {
-    const fetchRecords = async () => {
-      try {
-        setLoading(true);
-
-        // Build query parameters
-        const params = { ...filters };
-
-        // Remove empty filters
-        Object.keys(params).forEach(key =>
-          params[key] === '' && delete params[key]
-        );
-
-        const response = await axios.get('http://localhost:5000/api/form/records', { params });
-
-        if (response.data.success) {
-          setRecords(response.data.data);
-          setError(null);
-        } else {
-          setError(response.data.message || 'Failed to fetch records');
-        }
-      } catch (err) {
-        console.error('Error fetching records:', err);
-        setError(err.response?.data?.message || err.message || 'Failed to fetch records');
-      } finally {
-        setLoading(false);
-      }
-    };
-
     fetchRecords();
   }, [filters]);
 
-  // Handle filter changes
-  const handleFilterChange = (e) => {
-    const { name, value } = e.target;
-    setFilters(prev => ({
-      ...prev,
-      [name]: value
-    }));
-    setCurrentPage(1); // Reset to first page when filters change
-  };
-
-  // Reset filters
-  const resetFilters = () => {
-    setFilters({
-      department: '',
-      section: '',
-      year: ''
-    });
-    setSearchTerm('');
-  };
-
-  // Handle record deletion
-  const handleDeleteRecord = async (id) => {
-    if (!window.confirm('Are you sure you want to delete this record? This action cannot be undone.')) {
-      return;
-    }
-
+  const fetchRecords = async () => {
     try {
       setLoading(true);
-      const response = await axios.delete(`http://localhost:5000/api/form/records/${id}`);
+      const params = Object.fromEntries(
+        Object.entries(filters).filter(([_, v]) => v)
+      );
 
+      const response = await axios.get('http://localhost:5000/api/form/records', { params });
       if (response.data.success) {
-        // Remove the deleted record from the state
-        setRecords(prev => prev.filter(record => record._id !== id));
+        setRecords(response.data.data);
         setError(null);
       } else {
-        setError(response.data.message || 'Failed to delete record');
+        setError(response.data.message || 'Failed to fetch records');
       }
     } catch (err) {
-      console.error('Error deleting record:', err);
-      setError(err.response?.data?.message || err.message || 'Failed to delete record');
+      setError(err.response?.data?.message || 'Failed to fetch records');
     } finally {
       setLoading(false);
     }
   };
 
-  // Handle PDF export
+  const handleFilterChange = (e) => {
+    const { name, value } = e.target;
+    setFilters(prev => ({ ...prev, [name]: value }));
+    setCurrentPage(1);
+  };
+
+  const resetFilters = () => {
+    setFilters({ department: '', section: '', year: '', branch: '' });
+    setSearchTerm('');
+  };
+
+  const handleDeleteRecord = async (id) => {
+    if (!window.confirm('Delete this record irreversibly?')) return;
+    try {
+      setLoading(true);
+      const res = await axios.delete(`http://localhost:5000/api/form/records/${id}`);
+      if (res.data.success) {
+        setRecords(prev => prev.filter(r => r._id !== id));
+      }
+    } catch (err) {
+      setError('Deletion failed');
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const startEditing = (record) => {
+    setEditingRecord(record);
+    // Flatten structure for easier editing form
+    setEditForm({
+      ...record.originalRecord,
+      ...record.fullCsv // Spread CSV data at top level for easy access, but we'll need to reconstruct on save
+    });
+    setShowEditModal(true);
+  };
+
+  const handleEditChange = (key, value) => {
+    setEditForm(prev => ({
+      ...prev,
+      [key]: value
+    }));
+  };
+
+  const handleSaveEdit = async () => {
+    if (!editingRecord) return;
+
+    try {
+      setLoading(true);
+
+      // Separate top-level fields from CSV data
+      const topLevelFields = ['department', 'branch', 'section', 'year', 'semester', 'teacherName', 'aiTestDate'];
+
+      const recordUpdate = {};
+      const csvDataUpdate = {};
+
+      Object.entries(editForm).forEach(([key, value]) => {
+        if (topLevelFields.includes(key)) {
+          recordUpdate[key] = value;
+        } else if (key !== '_id' && key !== 'csvData' && key !== 'createdAt' && key !== 'updatedAt' && key !== '__v') {
+          // Assume everything else belongs to CSV Data
+          // We need to map back to the original CSV keys if possible, or just use the keys from editForm
+          // Let's filter out keys that we KNOW are from the flattened view but not in CSV
+          const derivedKeys = ['slNo', 'originalRecord', 'fullCsv', 'totalMarks', 'attendance', 'name', 'usn'];
+          // Note: name, usn are in derived but also likely in CSV. We should prefer the CSV key if it exists.
+
+          // Better approach: Iterate over the original CSV keys from editingRecord.fullCsv and get values from editForm
+          if (editingRecord.fullCsv && Object.prototype.hasOwnProperty.call(editingRecord.fullCsv, key)) {
+            csvDataUpdate[key] = value;
+          } else if (key === 'c1' || key === 'c2' || key === 'totalMarks' || key === 'attendance') {
+            // Allow editing these common fields even if casing matches simplified view
+            csvDataUpdate[key] = value;
+            // Also might need to map 'totalMarks' back to 'Total Marks' if that's the CSV key
+            Object.keys(editingRecord.fullCsv).forEach(originalKey => {
+              if (originalKey.toLowerCase().replace(/\s/g, '') === key.toLowerCase()) {
+                csvDataUpdate[originalKey] = value;
+              }
+            });
+          }
+        }
+      });
+
+      // Fallback: simple merge of what's in editForm that matches original CSV keys
+      const finalCsvData = { ...editingRecord.fullCsv };
+      Object.keys(finalCsvData).forEach(k => {
+        if (editForm[k] !== undefined) {
+          finalCsvData[k] = editForm[k];
+        }
+      });
+
+      const payload = {
+        ...recordUpdate,
+        csvData: finalCsvData
+      };
+
+      const response = await axios.put(`http://localhost:5000/api/form/records/${editingRecord._id}`, payload);
+
+      if (response.data.success) {
+        // Update local state
+        setRecords(prev => prev.map(r => r._id === editingRecord._id ? response.data.data : r));
+        setShowEditModal(false);
+        setEditingRecord(null);
+      } else {
+        setError(response.data.message || 'Update failed');
+      }
+    } catch (err) {
+      console.error("Update error", err);
+      setError(err.response?.data?.message || 'Update failed');
+    } finally {
+      setLoading(false);
+    }
+  };
+
   const handlePDFExport = () => {
     const doc = new jsPDF('landscape');
     doc.text('Student Assessment Records', 14, 16);
-
-    // Add filters info
-    let filterText = 'Filters: ';
-    if (filters.department) filterText += `Department: ${filters.department}, `;
-    if (filters.section) filterText += `Section: ${filters.section}, `;
-    if (filters.year) filterText += `Year: ${filters.year}, `;
-    if (filterText === 'Filters: ') filterText += 'None';
-    else filterText = filterText.slice(0, -2); // Remove trailing comma
-
     doc.setFontSize(10);
-    doc.text(filterText, 14, 24);
+    doc.text(`Generated: ${format(new Date(), 'PPpp')}`, 14, 24);
 
-    // Add date
-    doc.text(`Generated: ${new Date().toLocaleString()}`, 14, 30);
-
-    // Create table with all columns
     const tableColumn = [
-      'Sl No.', 'Name', 'USN', 'Activity', 'C1', 'C1 Date', 'Assign Marks',
-      'C2', 'C2 Date', 'Attendance', 'Record Marks', 'C2 Lab', 'Total Marks',
-      'Department', 'Year', 'Branch'
+      'Name', 'USN', 'Department', 'Year', 'Branch', 'Total Marks', 'Attendance'
     ];
 
-    const tableRows = filteredRecords.map(record => [
-      record.slNo,
-      record.name,
-      record.usn,
-      record.activity,
-      record.c1,
-      record.c1Date,
-      record.assignMarks,
-      record.c2,
-      record.c2Date,
-      record.attendance,
-      record.recordMarks,
-      record.c2Lab,
-      record.totalMarks,
-      record.department,
-      record.year,
-      record.branch
+    const tableRows = filteredRecords.map(r => [
+      r.name, r.usn, r.department, r.year, r.branch, r.totalMarks, r.attendance
     ]);
 
     autoTable(doc, {
-      startY: 35,
+      startY: 30,
       head: [tableColumn],
       body: tableRows,
       theme: 'grid',
-      styles: { fontSize: 7, cellPadding: 1 },
-      headStyles: { fillColor: [41, 128, 185], textColor: 255 },
-      columnStyles: {
-        0: { cellWidth: 10 }, // Sl No.
-        1: { cellWidth: 25 }, // Name
-        2: { cellWidth: 20 }, // USN
-        3: { cellWidth: 15 }, // Activity
-        // Let other columns auto-adjust
-      }
+      headStyles: { fillColor: [79, 70, 229] },
     });
-
-    doc.save('student_assessment_records.pdf');
+    doc.save('student_records.pdf');
   };
 
-  // Extract CSV data into a flattened format for display
-  const flattenedRecords = records.map((record, index) => {
-    // Extract CSV data fields
-    const csvData = record.csvData || {};
-
+  const flattenedRecords = useMemo(() => records.map((record, index) => {
+    const csv = record.csvData || {};
     return {
       _id: record._id,
       slNo: index + 1,
-      name: csvData.Name || csvData.name || '',
-      usn: csvData.USN || csvData.usn || '',
-      activity: csvData.Activity || csvData.activity || '',
-      c1: csvData.C1 || csvData.c1 || '',
-      c1Date: csvData['C1 Date'] || csvData.c1Date || '',
-      assignMarks: csvData['Assign Marks'] || csvData.assignMarks || '',
-      c2: csvData.C2 || csvData.c2 || '',
-      c2Date: csvData['C2 Date'] || csvData.c2Date || '',
-      attendance: csvData.Attendance || csvData.attendance || '',
-      recordMarks: csvData['Record Marks'] || csvData.recordMarks || '',
-      c2Lab: csvData['C2 Lab'] || csvData.c2Lab || '',
-      totalMarks: csvData['Total Marks'] || csvData.totalMarks || '',
-      department: record.department || csvData.Department || csvData.department || '',
-      year: record.year || csvData.Year || csvData.year || '',
-      branch: csvData.Branch || csvData.branch || '',
-      // Keep original record data for reference
-      originalRecord: record
+      name: csv.Name || csv.name || 'N/A',
+      usn: csv.USN || csv.usn || 'N/A',
+      department: record.department || csv.Department || 'N/A',
+      year: record.year || csv.Year || 'N/A',
+      branch: record.branch || csv.Branch || 'N/A',
+      section: record.section || csv.Section || 'N/A',
+      totalMarks: csv['Total Marks'] || csv.totalMarks || '-',
+      attendance: csv.Attendance || csv.attendance || '-',
+      c1: csv.C1 || csv.c1 || '-',
+      c2: csv.C2 || csv.c2 || '-',
+      originalRecord: record,
+      fullCsv: csv
     };
-  });
+  }), [records]);
 
-  // Filter records by search term
-  const filteredRecords = flattenedRecords.filter(record => {
-    const searchFields = [
-      record.name,
-      record.usn,
-      record.department,
-      record.branch,
-      record.year
-    ].filter(Boolean).join(' ').toLowerCase();
+  const filteredRecords = useMemo(() => flattenedRecords.filter(r =>
+    Object.values(r).some(val =>
+      String(val).toLowerCase().includes(searchTerm.toLowerCase())
+    )
+  ), [flattenedRecords, searchTerm]);
 
-    return searchFields.includes(searchTerm.toLowerCase());
-  });
+  const uniqueDepts = [...new Set(records.map(r => r.department).filter(Boolean))];
+  const uniqueYears = [...new Set(records.map(r => r.year).filter(Boolean))];
 
-  // Get unique values for filter dropdowns
-  const uniqueDepartments = [...new Set(records.map(record => record.department))].filter(Boolean);
-  const uniqueYears = [...new Set(records.map(record => record.year))].filter(Boolean);
-
-  // Pagination
   const totalPages = Math.ceil(filteredRecords.length / itemsPerPage);
   const currentRecords = filteredRecords.slice(
     (currentPage - 1) * itemsPerPage,
     currentPage * itemsPerPage
   );
 
-  // View record details
-  const viewRecordDetails = (record) => {
-    setSelectedRecord(record);
-    setShowDataModal(true);
-  };
-
-  // Format date for display
-  const formatDate = (dateString) => {
-    if (!dateString) return 'N/A';
-    try {
-      return format(new Date(dateString), 'MMM dd, yyyy HH:mm');
-    } catch (error) {
-      return dateString;
-    }
-  };
-
   return (
-    <div className="p-4 sm:p-6 pb-24">
+    <div className="min-h-screen bg-gray-50/50 p-3 sm:p-4 lg:p-6">
       <div className="max-w-7xl mx-auto space-y-4">
-        {/* Header with Title and Actions */}
-        <div className="bg-white rounded-lg shadow-md border border-gray-200 p-4 sm:p-6 mb-4">
-          <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 mb-4">
-            <div>
-              <h2 className="text-2xl sm:text-3xl font-bold bg-gradient-to-r from-indigo-600 to-purple-600 bg-clip-text text-transparent">
-                Student Records
-              </h2>
-              <p className="text-sm text-gray-600 mt-1">
-                {filteredRecords.length} record(s) found
-              </p>
-            </div>
-            
-            {/* Export Buttons */}
-            <div className="flex gap-2">
-              <CSVLink
-                data={filteredRecords}
-                filename="student_records.csv"
-                className="px-4 py-2 bg-green-500 text-white rounded-lg hover:bg-green-600 transition-colors font-medium shadow-sm text-sm"
-              >
-                📊 Export CSV
-              </CSVLink>
-              <button
-                onClick={handlePDFExport}
-                className="px-4 py-2 bg-red-500 text-white rounded-lg hover:bg-red-600 transition-colors font-medium shadow-sm text-sm"
-              >
-                📄 Export PDF
-              </button>
-            </div>
-          </div>
 
-          {/* Search and Filters in One Row */}
-          <div className="grid grid-cols-1 md:grid-cols-5 gap-3">
-            {/* Search */}
-            <div className="md:col-span-2">
+        {/* Header Section */}
+        <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 bg-white p-4 rounded-2xl shadow-sm border border-gray-100">
+          <div>
+            <h1 className="text-xl sm:text-2xl font-bold text-gray-900">Student Records Repository</h1>
+            <p className="text-gray-500 mt-0.5 flex items-center gap-2 text-sm">
+              <span className="bg-indigo-100 text-indigo-700 px-2 py-0.5 rounded text-xs font-medium">
+                {filteredRecords.length}
+              </span>
+              total entries found
+            </p>
+          </div>
+          <div className="flex gap-2">
+            <CSVLink
+              data={filteredRecords}
+              filename="student_records.csv"
+              className="flex items-center gap-2 px-3 py-2 bg-emerald-50 text-emerald-700 rounded-xl hover:bg-emerald-100 transition-colors font-medium border border-emerald-200 text-sm"
+            >
+              <FileSpreadsheet className="w-4 h-4" />
+              <span>Export CSV</span>
+            </CSVLink>
+            <button
+              onClick={handlePDFExport}
+              className="flex items-center gap-2 px-3 py-2 bg-rose-50 text-rose-700 rounded-xl hover:bg-rose-100 transition-colors font-medium border border-rose-200 text-sm"
+            >
+              <FileText className="w-4 h-4" />
+              <span>Export PDF</span>
+            </button>
+          </div>
+        </div>
+
+        {/* Filters & Search */}
+        <div className="bg-white p-4 rounded-2xl shadow-sm border border-gray-100 space-y-3">
+          <div className="flex flex-col md:flex-row gap-3">
+            <div className="relative flex-1">
+              <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />
               <input
                 type="text"
-                placeholder="Search by name, USN..."
+                placeholder="Search students, USN, departments..."
                 value={searchTerm}
                 onChange={(e) => setSearchTerm(e.target.value)}
-                className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500"
+                className="w-full pl-9 pr-4 py-2 bg-gray-50 border border-gray-200 rounded-xl focus:ring-2 focus:ring-indigo-500 focus:border-transparent outline-none transition-all text-sm"
               />
             </div>
-
-            {/* Department */}
-            <div>
+            <div className="flex gap-2 overflow-x-auto pb-1 md:pb-0">
               <select
                 name="department"
                 value={filters.department}
                 onChange={handleFilterChange}
-                className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500"
+                className="px-3 py-2 bg-gray-50 border border-gray-200 rounded-xl focus:ring-2 focus:ring-indigo-500 outline-none min-w-[130px] text-sm"
               >
-                <option value="">All Departments</option>
-                {uniqueDepartments.map((dept) => (
-                  <option key={dept} value={dept}>{dept}</option>
-                ))}
+                <option value="">All Depts</option>
+                {uniqueDepts.map(d => <option key={d} value={d}>{d}</option>)}
               </select>
-            </div>
-
-            {/* Year */}
-            <div>
               <select
                 name="year"
                 value={filters.year}
                 onChange={handleFilterChange}
-                className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500"
+                className="px-3 py-2 bg-gray-50 border border-gray-200 rounded-xl focus:ring-2 focus:ring-indigo-500 outline-none min-w-[110px] text-sm"
               >
                 <option value="">All Years</option>
-                {uniqueYears.map((year) => (
-                  <option key={year} value={year}>{year}</option>
-                ))}
+                {uniqueYears.map(y => <option key={y} value={y}>{y}</option>)}
               </select>
-            </div>
-
-            {/* Reset Button */}
-            <div>
               <button
                 onClick={resetFilters}
-                className="w-full px-4 py-2 bg-gray-100 text-gray-700 rounded-lg hover:bg-gray-200 transition-colors font-medium border border-gray-300"
+                className="px-3 py-2 text-gray-500 hover:text-gray-700 hover:bg-gray-100 rounded-xl transition-colors text-sm"
               >
                 Reset
               </button>
@@ -318,332 +325,337 @@ const FormDataViewer = () => {
           </div>
         </div>
 
-        {/* Error Message */}
-        {error && (
-          <div className="bg-red-50 border-l-4 border-red-500 text-red-700 p-4 rounded-lg mb-4 shadow-sm">
-            <div className="flex items-center">
-              <svg className="w-5 h-5 mr-2" fill="currentColor" viewBox="0 0 20 20">
-                <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zM8.707 7.293a1 1 0 00-1.414 1.414L8.586 10l-1.293 1.293a1 1 0 101.414 1.414L10 11.414l1.293 1.293a1 1 0 001.414-1.414L11.414 10l1.293-1.293a1 1 0 00-1.414-1.414L10 8.586 8.707 7.293z" clipRule="evenodd" />
-              </svg>
-              {error}
+        {/* Records Table */}
+        {loading ? (
+          <div className="h-64 flex flex-col items-center justify-center text-gray-400">
+            <div className="w-10 h-10 border-4 border-indigo-100 border-t-indigo-600 rounded-full animate-spin mb-4" />
+            <p>Loading data...</p>
+          </div>
+        ) : filteredRecords.length === 0 ? (
+          <div className="h-64 flex flex-col items-center justify-center text-gray-400 bg-white rounded-2xl border border-dashed border-gray-200">
+            <Search className="w-12 h-12 mb-2 opacity-20" />
+            <p>No matching records found.</p>
+          </div>
+        ) : (
+          <div className="bg-white rounded-2xl shadow-sm border border-gray-100 overflow-hidden">
+            <div className="overflow-x-auto">
+              <table className="w-full text-sm text-left">
+                <thead className="bg-gray-50 text-gray-500 font-medium border-b border-gray-200">
+                  <tr>
+                    <th className="px-4 py-3">Name / USN</th>
+                    <th className="px-4 py-3">Department</th>
+                    <th className="px-4 py-3">Year/Branch</th>
+                    <th className="px-4 py-3">Section</th>
+                    <th className="px-4 py-3 text-center">Marks</th>
+                    <th className="px-4 py-3 text-center">Actions</th>
+                  </tr>
+                </thead>
+                <tbody className="divide-y divide-gray-100">
+                  <AnimatePresence>
+                    {currentRecords.map((record) => (
+                      <motion.tr
+                        layout
+                        initial={{ opacity: 0 }}
+                        animate={{ opacity: 1 }}
+                        exit={{ opacity: 0 }}
+                        key={record._id}
+                        className="hover:bg-gray-50/50 transition-colors group"
+                      >
+                        <td className="px-4 py-3">
+                          <div className="flex flex-col">
+                            <span className="font-semibold text-gray-900">{record.name}</span>
+                            <span className="text-xs text-gray-500 font-mono">{record.usn}</span>
+                          </div>
+                        </td>
+                        <td className="px-4 py-3 text-gray-600">{record.department}</td>
+                        <td className="px-4 py-3">
+                          <div className="text-gray-600">{record.year}</div>
+                          <div className="text-xs text-gray-400">{record.branch}</div>
+                        </td>
+                        <td className="px-4 py-3 text-gray-600">{record.section}</td>
+                        <td className="px-4 py-3 text-center">
+                          <span className={`inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium ${record.totalMarks >= 35
+                            ? 'bg-emerald-100 text-emerald-800'
+                            : 'bg-rose-100 text-rose-800'
+                            }`}>
+                            {record.totalMarks}
+                          </span>
+                        </td>
+                        <td className="px-4 py-3">
+                          <div className="flex items-center justify-center gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
+                            <button
+                              onClick={() => startEditing(record)}
+                              className="p-1.5 rounded-lg text-gray-400 hover:text-emerald-600 hover:bg-emerald-50 transition-all"
+                              title="Edit Record"
+                            >
+                              <Pencil className="w-3.5 h-3.5" />
+                            </button>
+                            <button
+                              onClick={() => { setSelectedRecord(record); setShowDataModal(true); }}
+                              className="p-1.5 rounded-lg text-gray-400 hover:text-indigo-600 hover:bg-indigo-50 transition-all"
+                              title="View Details"
+                            >
+                              <ScanEye className="w-3.5 h-3.5" />
+                            </button>
+                            <button
+                              onClick={() => handleDeleteRecord(record._id)}
+                              className="p-1.5 rounded-lg text-gray-400 hover:text-rose-600 hover:bg-rose-50 transition-all"
+                              title="Delete Record"
+                            >
+                              <Trash className="w-3.5 h-3.5" />
+                            </button>
+                          </div>
+                        </td>
+                      </motion.tr>
+                    ))}
+                  </AnimatePresence>
+                </tbody>
+              </table>
             </div>
           </div>
         )}
 
-        {/* Loading Indicator */}
-        {loading ? (
-          <div className="flex flex-col justify-center items-center py-12 sm:py-16">
-            <div className="animate-spin rounded-full h-12 w-12 sm:h-16 sm:w-16 border-t-4 border-b-4 border-indigo-600"></div>
-            <p className="mt-4 text-gray-600 font-medium text-sm sm:text-base">Loading records...</p>
+        {/* Pagination */}
+        {totalPages > 1 && (
+          <div className="flex justify-center items-center gap-2 mt-6 mb-2">
+            <button
+              onClick={() => setCurrentPage(p => Math.max(1, p - 1))}
+              disabled={currentPage === 1}
+              className="p-1.5 rounded-lg hover:bg-gray-100 disabled:opacity-30 disabled:hover:bg-transparent"
+            >
+              <ChevronLeft className="w-5 h-5" />
+            </button>
+            <span className="text-sm font-medium text-gray-600">
+              Page {currentPage} of {totalPages}
+            </span>
+            <button
+              onClick={() => setCurrentPage(p => Math.min(totalPages, p + 1))}
+              disabled={currentPage === totalPages}
+              className="p-1.5 rounded-lg hover:bg-gray-100 disabled:opacity-30 disabled:hover:bg-transparent"
+            >
+              <ChevronRight className="w-5 h-5" />
+            </button>
           </div>
-        ) : (
-          <>
-            {/* Records Table/Cards */}
-            {filteredRecords.length > 0 ? (
-              <>
-                {/* Desktop Table - Hidden on Mobile */}
-                <div className="hidden lg:block relative overflow-x-auto shadow-xl rounded-lg border border-gray-200 bg-white">
-                  <table className="w-full text-sm">
-                    <thead className="bg-gradient-to-r from-indigo-600 to-purple-600 text-white">
+        )}
+      </div>
+
+      {/* Details Modal */}
+      <AnimatePresence>
+        {showDataModal && selectedRecord && (
+          <motion.div
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            className="fixed inset-0 bg-black/40 backdrop-blur-sm z-50 flex items-center justify-center p-4"
+            onClick={() => setShowDataModal(false)}
+          >
+            <motion.div
+              initial={{ scale: 0.95, opacity: 0 }}
+              animate={{ scale: 1, opacity: 1 }}
+              exit={{ scale: 0.95, opacity: 0 }}
+              onClick={e => e.stopPropagation()}
+              className="bg-white rounded-2xl shadow-xl w-full max-w-2xl max-h-[85vh] overflow-hidden flex flex-col"
+            >
+              <div className="p-4 border-b border-gray-100 flex justify-between items-start">
+                <div>
+                  <h2 className="text-lg font-bold text-gray-900">{selectedRecord.name}</h2>
+                  <p className="text-indigo-600 font-medium text-sm">{selectedRecord.usn}</p>
+                </div>
+                <button
+                  onClick={() => setShowDataModal(false)}
+                  className="p-1.5 rounded-full hover:bg-gray-100 text-gray-400 hover:text-gray-600 transition-colors"
+                >
+                  <X className="w-4 h-4" />
+                </button>
+              </div>
+
+              <div className="p-4 overflow-y-auto">
+                <div className="grid grid-cols-2 gap-3 mb-6">
+                  <div className="bg-gray-50 p-3 rounded-xl">
+                    <p className="text-xs text-gray-400 uppercase font-semibold mb-1">Academic Info</p>
+                    <div className="space-y-0.5 text-sm">
+                      <p><span className="text-gray-500">Dept:</span> {selectedRecord.department}</p>
+                      <p><span className="text-gray-500">Year:</span> {selectedRecord.year}</p>
+                      <p><span className="text-gray-500">Branch:</span> {selectedRecord.branch}</p>
+                    </div>
+                  </div>
+                  <div className="bg-indigo-50/50 p-3 rounded-xl">
+                    <p className="text-xs text-indigo-400 uppercase font-semibold mb-1">Performance</p>
+                    <div className="space-y-0.5 text-sm">
+                      <p><span className="text-indigo-600/70">C1:</span> {selectedRecord.c1}</p>
+                      <p><span className="text-indigo-600/70">C2:</span> {selectedRecord.c2}</p>
+                      <p className="font-bold text-indigo-700 mt-0.5">Total: {selectedRecord.totalMarks}</p>
+                    </div>
+                  </div>
+                </div>
+
+                <h3 className="text-sm font-bold text-gray-900 mb-2 flex items-center gap-2">
+                  <FileText className="w-4 h-4" /> Full CSV Data
+                </h3>
+                <div className="border border-gray-100 rounded-xl overflow-hidden">
+                  <table className="w-full text-sm text-left">
+                    <thead className="bg-gray-50 text-gray-500 font-medium">
                       <tr>
-                        <th className="px-4 py-3 text-left font-semibold">Sl No.</th>
-                        <th className="px-4 py-3 text-left font-semibold">Name</th>
-                        <th className="px-4 py-3 text-left font-semibold">USN</th>
-                        <th className="px-4 py-3 text-left font-semibold">Department</th>
-                        <th className="px-4 py-3 text-left font-semibold">Year</th>
-                        <th className="px-4 py-3 text-left font-semibold">Activity</th>
-                        <th className="px-4 py-3 text-left font-semibold">C1</th>
-                        <th className="px-4 py-3 text-left font-semibold">C2</th>
-                        <th className="px-4 py-3 text-left font-semibold">Total</th>
-                        <th className="px-4 py-3 text-center font-semibold">Actions</th>
+                        <th className="px-3 py-2">Field</th>
+                        <th className="px-3 py-2">Value</th>
                       </tr>
                     </thead>
-                    <tbody className="divide-y divide-gray-200">
-                      {currentRecords.map((record, index) => (
-                        <tr key={record._id} className={`${index % 2 === 0 ? 'bg-white' : 'bg-indigo-50'} hover:bg-purple-50 transition-colors`}>
-                          <td className="px-4 py-3 text-gray-700">{record.slNo}</td>
-                          <td className="px-4 py-3 text-gray-900 font-semibold">{record.name}</td>
-                          <td className="px-4 py-3 text-gray-700">{record.usn}</td>
-                          <td className="px-4 py-3 text-gray-700">{record.department}</td>
-                          <td className="px-4 py-3 text-gray-700">{record.year}</td>
-                          <td className="px-4 py-3 text-gray-700">{record.activity}</td>
-                          <td className="px-4 py-3 text-blue-600 font-medium">{record.c1}</td>
-                          <td className="px-4 py-3 text-blue-600 font-medium">{record.c2}</td>
-                          <td className="px-4 py-3 text-green-700 font-bold">{record.totalMarks}</td>
-                          <td className="px-4 py-3">
-                            <div className="flex justify-center gap-2">
-                              <button
-                                onClick={() => viewRecordDetails(record.originalRecord)}
-                                className="px-3 py-1 text-xs bg-indigo-500 text-white rounded-md hover:bg-indigo-600 transition-colors"
-                              >
-                                View
-                              </button>
-                              <button
-                                onClick={() => handleDeleteRecord(record._id)}
-                                className="px-3 py-1 text-xs bg-red-500 text-white rounded-md hover:bg-red-600 transition-colors"
-                              >
-                                Delete
-                              </button>
-                            </div>
-                          </td>
+                    <tbody className="divide-y divide-gray-100">
+                      {Object.entries(selectedRecord.fullCsv).map(([k, v]) => (
+                        <tr key={k} className="hover:bg-gray-50/50">
+                          <td className="px-3 py-2 text-gray-500 font-medium">{k}</td>
+                          <td className="px-3 py-2 text-gray-800">{String(v || '-')}</td>
                         </tr>
                       ))}
                     </tbody>
                   </table>
                 </div>
-
-                {/* Mobile Card View - Visible only on Mobile */}
-                <div className="lg:hidden space-y-4">
-                  {currentRecords.map((record) => (
-                    <div key={record._id} className="bg-white rounded-lg shadow-md border border-indigo-100 overflow-hidden">
-                      <div className="bg-gradient-to-r from-indigo-500 to-purple-500 px-4 py-3">
-                        <div className="flex justify-between items-start">
-                          <div>
-                            <h3 className="text-white font-bold text-lg">{record.name}</h3>
-                            <p className="text-indigo-100 text-sm">{record.usn}</p>
-                          </div>
-                          <span className="bg-white text-indigo-600 px-3 py-1 rounded-full text-xs font-bold">
-                            #{record.slNo}
-                          </span>
-                        </div>
-                      </div>
-                      
-                      <div className="p-4 space-y-3">
-                        <div className="grid grid-cols-2 gap-3">
-                          <div className="bg-indigo-50 p-3 rounded-lg">
-                            <p className="text-xs text-gray-600 mb-1">Department</p>
-                            <p className="text-sm font-semibold text-gray-800">{record.department || 'N/A'}</p>
-                          </div>
-                          <div className="bg-purple-50 p-3 rounded-lg">
-                            <p className="text-xs text-gray-600 mb-1">Year</p>
-                            <p className="text-sm font-semibold text-gray-800">{record.year || 'N/A'}</p>
-                          </div>
-                        </div>
-
-                        <div className="grid grid-cols-2 gap-3">
-                          <div className="bg-pink-50 p-3 rounded-lg">
-                            <p className="text-xs text-gray-600 mb-1">Branch</p>
-                            <p className="text-sm font-semibold text-gray-800">{record.branch || 'N/A'}</p>
-                          </div>
-                          <div className="bg-green-50 p-3 rounded-lg">
-                            <p className="text-xs text-gray-600 mb-1">Activity</p>
-                            <p className="text-sm font-semibold text-gray-800">{record.activity || 'N/A'}</p>
-                          </div>
-                        </div>
-
-                        <div className="border-t border-gray-200 pt-3 mt-3">
-                          <p className="text-xs text-gray-600 mb-2">Assessment Scores</p>
-                          <div className="grid grid-cols-3 gap-2 text-center">
-                            <div className="bg-blue-50 p-2 rounded">
-                              <p className="text-xs text-gray-600">C1</p>
-                              <p className="text-sm font-bold text-blue-700">{record.c1 || '-'}</p>
-                            </div>
-                            <div className="bg-blue-50 p-2 rounded">
-                              <p className="text-xs text-gray-600">C2</p>
-                              <p className="text-sm font-bold text-blue-700">{record.c2 || '-'}</p>
-                            </div>
-                            <div className="bg-green-100 p-2 rounded">
-                              <p className="text-xs text-gray-600">Total</p>
-                              <p className="text-base font-bold text-green-700">{record.totalMarks || '-'}</p>
-                            </div>
-                          </div>
-                        </div>
-
-                        <div className="grid grid-cols-2 gap-2 text-xs">
-                          <div>
-                            <span className="text-gray-600">Attendance: </span>
-                            <span className="font-semibold text-gray-800">{record.attendance || 'N/A'}</span>
-                          </div>
-                          <div>
-                            <span className="text-gray-600">C2 Lab: </span>
-                            <span className="font-semibold text-gray-800">{record.c2Lab || 'N/A'}</span>
-                          </div>
-                        </div>
-
-                        <div className="flex gap-2 pt-3">
-                          <button
-                            onClick={() => viewRecordDetails(record.originalRecord)}
-                            className="flex-1 px-4 py-2 bg-indigo-500 text-white rounded-lg hover:bg-indigo-600 transition-colors font-medium text-sm"
-                          >
-                            View Details
-                          </button>
-                          <button
-                            onClick={() => handleDeleteRecord(record._id)}
-                            className="px-4 py-2 bg-red-100 text-red-700 rounded-lg hover:bg-red-200 transition-colors font-medium text-sm"
-                          >
-                            Delete
-                          </button>
-                        </div>
-                      </div>
-                    </div>
-                  ))}
-                </div>
-
-                {/* Pagination */}
-                {totalPages > 1 && (
-                  <div className="flex justify-center items-center mt-4 sm:mt-6 flex-wrap gap-2 bg-white py-3 sm:py-4 rounded-lg">
-                    <button
-                      onClick={() => setCurrentPage(1)}
-                      disabled={currentPage === 1}
-                      className="px-2 sm:px-4 py-2 bg-indigo-100 text-indigo-700 rounded-lg disabled:opacity-50 disabled:cursor-not-allowed hover:bg-indigo-200 transition-colors font-medium text-sm"
-                    >
-                      <span className="hidden sm:inline">&laquo; First</span>
-                      <span className="sm:hidden">&laquo;</span>
-                    </button>
-                    <button
-                      onClick={() => setCurrentPage(prev => Math.max(prev - 1, 1))}
-                      disabled={currentPage === 1}
-                      className="px-2 sm:px-4 py-2 bg-indigo-100 text-indigo-700 rounded-lg disabled:opacity-50 disabled:cursor-not-allowed hover:bg-indigo-200 transition-colors font-medium text-sm"
-                    >
-                      <span className="hidden sm:inline">&lt; Prev</span>
-                      <span className="sm:hidden">&lt;</span>
-                    </button>
-                    <span className="px-3 sm:px-4 py-2 bg-gradient-to-r from-indigo-600 to-purple-600 text-white rounded-lg font-semibold text-sm">
-                      <span className="hidden sm:inline">Page </span>{currentPage}<span className="hidden sm:inline"> of {totalPages}</span>
-                      <span className="sm:hidden">/{totalPages}</span>
-                    </span>
-                    <button
-                      onClick={() => setCurrentPage(prev => Math.min(prev + 1, totalPages))}
-                      disabled={currentPage === totalPages}
-                      className="px-2 sm:px-4 py-2 bg-indigo-100 text-indigo-700 rounded-lg disabled:opacity-50 disabled:cursor-not-allowed hover:bg-indigo-200 transition-colors font-medium text-sm"
-                    >
-                      <span className="hidden sm:inline">Next &gt;</span>
-                      <span className="sm:hidden">&gt;</span>
-                    </button>
-                    <button
-                      onClick={() => setCurrentPage(totalPages)}
-                      disabled={currentPage === totalPages}
-                      className="px-2 sm:px-4 py-2 bg-indigo-100 text-indigo-700 rounded-lg disabled:opacity-50 disabled:cursor-not-allowed hover:bg-indigo-200 transition-colors font-medium text-sm"
-                    >
-                      <span className="hidden sm:inline">Last &raquo;</span>
-                      <span className="sm:hidden">&raquo;</span>
-                    </button>
-                  </div>
-                )}
-              </>
-            ) : (
-              <div className="bg-white border-2 border-dashed border-gray-300 p-12 rounded-xl text-center">
-                <svg className="mx-auto h-12 w-12 text-gray-400 mb-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
-                </svg>
-                <h3 className="text-lg font-semibold text-gray-700 mb-2">No records found</h3>
-                <p className="text-gray-500">Try adjusting your filters or search criteria.</p>
               </div>
-            )}
-          </>
+            </motion.div>
+          </motion.div>
         )}
-      </div>
+      </AnimatePresence>
 
-      {/* Record Details Modal */}
-      {showDataModal && selectedRecord && (
-        <div className="fixed inset-0 bg-black bg-opacity-60 flex items-center justify-center z-50 p-2 sm:p-4 overflow-y-auto backdrop-blur-sm">
-          <div className="bg-white rounded-xl sm:rounded-2xl shadow-2xl max-w-5xl w-full max-h-[95vh] sm:max-h-[90vh] overflow-auto my-4 sm:my-8">
-            <div className="sticky top-0 bg-gradient-to-r from-indigo-600 to-purple-600 p-4 sm:p-6 rounded-t-xl sm:rounded-t-2xl z-10">
-              <div className="flex justify-between items-center">
-                <h3 className="text-xl sm:text-2xl font-bold text-white">Record Details</h3>
+      {/* Edit Modal */}
+      <AnimatePresence>
+        {showEditModal && editingRecord && (
+          <motion.div
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            className="fixed inset-0 bg-black/40 backdrop-blur-sm z-50 flex items-center justify-center p-4"
+            onClick={() => setShowEditModal(false)}
+          >
+            <motion.div
+              initial={{ scale: 0.95, opacity: 0 }}
+              animate={{ scale: 1, opacity: 1 }}
+              exit={{ scale: 0.95, opacity: 0 }}
+              onClick={e => e.stopPropagation()}
+              className="bg-white rounded-2xl shadow-xl w-full max-w-2xl max-h-[85vh] overflow-hidden flex flex-col"
+            >
+              <div className="p-4 border-b border-gray-100 flex justify-between items-center bg-gray-50">
+                <h2 className="text-lg font-bold text-gray-900 flex items-center gap-2">
+                  <Pencil className="w-4 h-4 text-indigo-600" />
+                  Edit Record
+                </h2>
                 <button
-                  onClick={() => setShowDataModal(false)}
-                  className="text-white hover:bg-white hover:bg-opacity-20 rounded-full p-2 transition-all"
+                  onClick={() => setShowEditModal(false)}
+                  className="p-1.5 rounded-full hover:bg-gray-200 text-gray-400 hover:text-gray-600 transition-colors"
                 >
-                  <svg className="w-5 h-5 sm:w-6 sm:h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M6 18L18 6M6 6l12 12" />
-                  </svg>
+                  <X className="w-4 h-4" />
                 </button>
               </div>
-            </div>
 
-            <div className="p-4 sm:p-6">
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4 sm:gap-6 mb-4 sm:mb-6">
-                <div className="bg-indigo-50 p-3 sm:p-4 rounded-lg border-l-4 border-indigo-600">
-                  <p className="text-sm sm:text-base text-gray-700"><span className="font-semibold text-indigo-700">Department:</span> {selectedRecord.department}</p>
-                  <p className="text-sm sm:text-base text-gray-700"><span className="font-semibold text-indigo-700">Section:</span> {selectedRecord.section}</p>
-                  <p className="text-sm sm:text-base text-gray-700"><span className="font-semibold text-indigo-700">Year:</span> {selectedRecord.year}</p>
-                </div>
-                <div className="bg-purple-50 p-3 sm:p-4 rounded-lg border-l-4 border-purple-600">
-                  <p className="text-sm sm:text-base text-gray-700"><span className="font-semibold text-purple-700">Teacher:</span> {selectedRecord.teacherName}</p>
-                  <p className="text-sm sm:text-base text-gray-700"><span className="font-semibold text-purple-700">Test Date:</span> {selectedRecord.aiTestDate}</p>
-                  <p className="text-sm sm:text-base text-gray-700"><span className="font-semibold text-purple-700">Upload Date:</span> {formatDate(selectedRecord.createdAt)}</p>
-                </div>
-              </div>
+              <div className="p-4 overflow-y-auto space-y-4">
 
-              <h4 className="text-lg sm:text-xl font-bold text-gray-800 mb-3 sm:mb-4 flex items-center">
-                <svg className="w-4 h-4 sm:w-5 sm:h-5 mr-2 text-indigo-600" fill="currentColor" viewBox="0 0 20 20">
-                  <path d="M9 2a1 1 0 000 2h2a1 1 0 100-2H9z" />
-                  <path fillRule="evenodd" d="M4 5a2 2 0 012-2 3 3 0 003 3h2a3 3 0 003-3 2 2 0 012 2v11a2 2 0 01-2 2H6a2 2 0 01-2-2V5zm3 4a1 1 0 000 2h.01a1 1 0 100-2H7zm3 0a1 1 0 000 2h3a1 1 0 100-2h-3zm-3 4a1 1 0 100 2h.01a1 1 0 100-2H7zm3 0a1 1 0 100 2h3a1 1 0 100-2h-3z" clipRule="evenodd" />
-                </svg>
-                <span className="text-sm sm:text-base">Student Record Details</span>
-              </h4>
-              {selectedRecord.csvData && Object.keys(selectedRecord.csvData).length > 0 ? (
-                <div className="bg-gradient-to-br from-gray-50 to-indigo-50 p-4 sm:p-6 rounded-xl border border-gray-200">
-                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 sm:gap-6 mb-4 sm:mb-6">
-                    <div className="space-y-2 sm:space-y-3">
-                      <p className="text-sm sm:text-base text-gray-700"><span className="font-semibold text-indigo-700">Name:</span> {selectedRecord.csvData.Name || selectedRecord.csvData.name || 'N/A'}</p>
-                      <p className="text-sm sm:text-base text-gray-700"><span className="font-semibold text-indigo-700">USN:</span> {selectedRecord.csvData.USN || selectedRecord.csvData.usn || 'N/A'}</p>
-                      <p className="text-sm sm:text-base text-gray-700"><span className="font-semibold text-indigo-700">Activity:</span> {selectedRecord.csvData.Activity || selectedRecord.csvData.activity || 'N/A'}</p>
-                      <p className="text-sm sm:text-base text-gray-700"><span className="font-semibold text-indigo-700">Department:</span> {selectedRecord.department || selectedRecord.csvData.Department || selectedRecord.csvData.department || 'N/A'}</p>
-                      <p className="text-sm sm:text-base text-gray-700"><span className="font-semibold text-indigo-700">Year:</span> {selectedRecord.year || selectedRecord.csvData.Year || selectedRecord.csvData.year || 'N/A'}</p>
-                      <p className="text-sm sm:text-base text-gray-700"><span className="font-semibold text-indigo-700">Branch:</span> {selectedRecord.csvData.Branch || selectedRecord.csvData.branch || 'N/A'}</p>
+                {/* Academic Info Section */}
+                <div>
+                  <h3 className="text-xs font-semibold text-gray-500 uppercase tracking-wider mb-2">Academic Information</h3>
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+                    <div>
+                      <label className="block text-xs font-medium text-gray-700 mb-1">Department</label>
+                      <input
+                        type="text"
+                        value={editForm.department || ''}
+                        onChange={(e) => handleEditChange('department', e.target.value)}
+                        className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-transparent outline-none text-sm"
+                      />
                     </div>
-
-                    <div className="space-y-2 sm:space-y-3">
-                      <p className="text-sm sm:text-base text-gray-700"><span className="font-semibold text-purple-700">C1:</span> {selectedRecord.csvData.C1 || selectedRecord.csvData.c1 || 'N/A'}</p>
-                      <p className="text-sm sm:text-base text-gray-700"><span className="font-semibold text-purple-700">C1 Date:</span> {selectedRecord.csvData['C1 Date'] || selectedRecord.csvData.c1Date || 'N/A'}</p>
-                      <p className="text-sm sm:text-base text-gray-700"><span className="font-semibold text-purple-700">Assign Marks:</span> {selectedRecord.csvData['Assign Marks'] || selectedRecord.csvData.assignMarks || 'N/A'}</p>
-                      <p className="text-sm sm:text-base text-gray-700"><span className="font-semibold text-purple-700">C2:</span> {selectedRecord.csvData.C2 || selectedRecord.csvData.c2 || 'N/A'}</p>
-                      <p className="text-sm sm:text-base text-gray-700"><span className="font-semibold text-purple-700">C2 Date:</span> {selectedRecord.csvData['C2 Date'] || selectedRecord.csvData.c2Date || 'N/A'}</p>
-                      <p className="text-sm sm:text-base text-gray-700"><span className="font-semibold text-purple-700">C2 Lab:</span> {selectedRecord.csvData['C2 Lab'] || selectedRecord.csvData.c2Lab || 'N/A'}</p>
+                    <div>
+                      <label className="block text-xs font-medium text-gray-700 mb-1">Branch</label>
+                      <input
+                        type="text"
+                        value={editForm.branch || ''}
+                        onChange={(e) => handleEditChange('branch', e.target.value)}
+                        className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-transparent outline-none text-sm"
+                      />
                     </div>
-
-                    <div className="space-y-2 sm:space-y-3">
-                      <p className="text-sm sm:text-base text-gray-700"><span className="font-semibold text-green-700">Attendance:</span> {selectedRecord.csvData.Attendance || selectedRecord.csvData.attendance || 'N/A'}</p>
-                      <p className="text-sm sm:text-base text-gray-700"><span className="font-semibold text-green-700">Record Marks:</span> {selectedRecord.csvData['Record Marks'] || selectedRecord.csvData.recordMarks || 'N/A'}</p>
-                      <p className="text-base sm:text-lg"><span className="font-bold text-green-700">Total Marks:</span> <span className="text-lg sm:text-xl font-bold text-green-600">{selectedRecord.csvData['Total Marks'] || selectedRecord.csvData.totalMarks || 'N/A'}</span></p>
+                    <div>
+                      <label className="block text-xs font-medium text-gray-700 mb-1">Year</label>
+                      <select
+                        value={editForm.year || ''}
+                        onChange={(e) => handleEditChange('year', e.target.value)}
+                        className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 outline-none text-sm"
+                      >
+                        <option value="">Select Year</option>
+                        {[1, 2, 3, 4].map(y => <option key={y} value={y}>{y}</option>)}
+                      </select>
+                    </div>
+                    <div>
+                      <label className="block text-xs font-medium text-gray-700 mb-1">Section</label>
+                      <input
+                        type="text"
+                        value={editForm.section || ''}
+                        onChange={(e) => handleEditChange('section', e.target.value)}
+                        className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-transparent outline-none text-sm"
+                      />
                     </div>
                   </div>
+                </div>
 
-                  <div className="col-span-1 md:col-span-2 mt-4 sm:mt-6">
-                    <h5 className="text-base sm:text-lg font-bold text-gray-800 mb-2 sm:mb-3">All CSV Data</h5>
-                    <div className="overflow-x-auto overflow-y-auto max-h-[250px] sm:max-h-[300px] rounded-lg border border-gray-300">
-                      <table className="min-w-full bg-white text-sm sm:text-base">
-                        <thead className="bg-gradient-to-r from-indigo-600 to-purple-600 text-white sticky top-0">
-                          <tr>
-                            <th className="px-3 sm:px-6 py-2 sm:py-3 text-left text-xs font-bold uppercase tracking-wider">Field</th>
-                            <th className="px-3 sm:px-6 py-2 sm:py-3 text-left text-xs font-bold uppercase tracking-wider">Value</th>
+                {/* CSV Data Section */}
+                <div>
+                  <h3 className="text-xs font-semibold text-gray-500 uppercase tracking-wider mb-2 flex items-center gap-2">
+                    <FileSpreadsheet className="w-3.5 h-3.5" /> Student Data
+                  </h3>
+                  <div className="border border-gray-200 rounded-xl overflow-hidden">
+                    <table className="w-full text-sm text-left">
+                      <thead className="bg-gray-50 text-gray-500 font-medium border-b border-gray-200">
+                        <tr>
+                          <th className="px-3 py-2 w-1/3">Field</th>
+                          <th className="px-3 py-2 w-2/3">Value</th>
+                        </tr>
+                      </thead>
+                      <tbody className="divide-y divide-gray-100">
+                        {editingRecord.fullCsv && Object.entries(editingRecord.fullCsv).map(([key, value]) => (
+                          <tr key={key} className="hover:bg-gray-50/50">
+                            <td className="px-3 py-2 text-gray-700 font-medium">{key}</td>
+                            <td className="px-3 py-2">
+                              <input
+                                type="text"
+                                value={editForm[key] !== undefined ? editForm[key] : (value || '')}
+                                onChange={(e) => handleEditChange(key, e.target.value)}
+                                className="w-full px-2 py-1 border border-gray-200 rounded focus:ring-1 focus:ring-indigo-500 focus:border-indigo-500 outline-none text-sm transition-all bg-transparent focus:bg-white"
+                              />
+                            </td>
                           </tr>
-                        </thead>
-                        <tbody>
-                          {Object.entries(selectedRecord.csvData).map(([key, value], index) => (
-                            <tr key={index} className={`${index % 2 === 0 ? 'bg-white' : 'bg-indigo-50'} hover:bg-purple-50 transition-colors`}>
-                              <td className="px-3 sm:px-6 py-2 sm:py-4 font-semibold text-gray-700 border-b border-gray-200 text-xs sm:text-sm">{key}</td>
-                              <td className="px-3 sm:px-6 py-2 sm:py-4 text-gray-600 border-b border-gray-200 text-xs sm:text-sm">{value || 'N/A'}</td>
-                            </tr>
-                          ))}
-                        </tbody>
-                      </table>
-                    </div>
+                        ))}
+                      </tbody>
+                    </table>
                   </div>
                 </div>
-              ) : (
-                <div className="bg-gray-100 p-6 sm:p-8 rounded-lg text-center">
-                  <svg className="mx-auto h-10 w-10 sm:h-12 sm:w-12 text-gray-400 mb-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M20 13V6a2 2 0 00-2-2H6a2 2 0 00-2 2v7m16 0v5a2 2 0 01-2 2H6a2 2 0 01-2-2v-5m16 0h-2.586a1 1 0 00-.707.293l-2.414 2.414a1 1 0 01-.707.293h-3.172a1 1 0 01-.707-.293l-2.414-2.414A1 1 0 006.586 13H4" />
-                  </svg>
-                  <p className="text-gray-600 font-medium text-sm sm:text-base">No CSV data available</p>
-                </div>
-              )}
 
-              <div className="mt-6 sm:mt-8 flex justify-end">
+              </div>
+
+              <div className="p-4 border-t border-gray-100 bg-gray-50 flex justify-end gap-3 rounded-b-2xl">
                 <button
-                  onClick={() => setShowDataModal(false)}
-                  className="w-full sm:w-auto px-4 sm:px-6 py-2 sm:py-3 bg-gradient-to-r from-indigo-600 to-purple-600 text-white rounded-lg hover:from-indigo-700 hover:to-purple-700 transition-all shadow-md font-medium text-sm sm:text-base"
+                  onClick={() => setShowEditModal(false)}
+                  className="px-3 py-2 text-gray-700 hover:bg-gray-200 rounded-lg transition-colors font-medium text-sm"
                 >
-                  Close
+                  Cancel
+                </button>
+                <button
+                  onClick={handleSaveEdit}
+                  disabled={loading}
+                  className="px-4 py-2 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700 transition-colors font-medium shadow-sm flex items-center gap-2 text-sm"
+                >
+                  {loading ? (
+                    <>
+                      <div className="w-3.5 h-3.5 border-2 border-white/30 border-t-white rounded-full animate-spin" />
+                      Saving...
+                    </>
+                  ) : (
+                    <>
+                      <Save className="w-3.5 h-3.5" />
+                      Save Changes
+                    </>
+                  )}
                 </button>
               </div>
-            </div>
-          </div>
-        </div>
-      )}
+            </motion.div>
+          </motion.div>
+        )}
+      </AnimatePresence>
     </div>
   );
 };

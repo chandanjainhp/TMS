@@ -110,8 +110,21 @@ const storage = multer.diskStorage({
 
 // File filter to only accept CSV files
 const fileFilter = (req, file, cb) => {
-  const allowedTypes = ['text/csv', 'application/vnd.ms-excel'];
-  if (allowedTypes.includes(file.mimetype)) {
+  const allowedTypes = [
+    'text/csv',
+    'application/vnd.ms-excel',
+    'application/csv',
+    'text/x-csv',
+    'application/x-csv',
+    'text/comma-separated-values',
+    'text/x-comma-separated-values',
+    'application/vnd.msexcel'
+  ];
+
+  // Also check extension as a fallback since mime types can be unreliable
+  const ext = path.extname(file.originalname).toLowerCase();
+
+  if (allowedTypes.includes(file.mimetype) || ext === '.csv') {
     cb(null, true);
   } else {
     cb(new Error('Invalid file type. Only CSV files are allowed.'), false);
@@ -130,14 +143,14 @@ const upload = multer({
 // Form data validation middleware
 const validateFormData = (req, res, next) => {
   const { department, section, year, teacherName, aiTestDate } = req.body;
-  
+
   if (!department || !section || !year || !teacherName || !aiTestDate) {
     return res.status(400).json({
       success: false,
       message: 'All form fields are required'
     });
   }
-  
+
   next();
 };
 

@@ -1,6 +1,6 @@
 import express from 'express';
 import { upload, validateFormData, handleUploadErrors } from '../middleware/uploadMiddleware.js';
-import { uploadRecords, getRecords, deleteRecord } from '../controllers/from.controller.js';
+import { uploadRecords, getRecords, deleteRecord, updateRecord } from '../controllers/from.controller.js';
 import { verifyToken } from '../middleware/verifyToken.js';
 
 const router = express.Router();
@@ -16,6 +16,9 @@ router.post(
 
 // Route for getting records with sorting and filtering (accessible to all authenticated users)
 router.get('/records', verifyToken, getRecords);
+
+// Route for updating a record by ID (admin/teacher)
+router.put('/records/:id', verifyToken, updateRecord);
 
 // Route for deleting a record by ID (admin only)
 router.delete('/records/:id', verifyToken, deleteRecord);
