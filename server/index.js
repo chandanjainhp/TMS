@@ -1,12 +1,16 @@
 // Express server and middleware imports
-import express from "express"; // Fast, minimalist web framework for Node.js
 import dotenv from "dotenv"; // Loads environment variables from a .env file into process.env
 import cors from "cors"; // Middleware to enable Cross-Origin Resource Sharing
 import cookieParser from "cookie-parser"; // Middleware to parse cookies from requests
+import express from "express"; // Needed for middleware usage
 // Node utilities and DB connector
 import path from "path"; // Utilities for file and directory paths
 import { fileURLToPath } from "url"; // Convert import.meta.url to a file path (ESM)
 import { connectDB } from "./db/connectDB.js"; // Function that connects to MongoDB
+
+// Socket.io integration
+import { app, server } from "./socket/socket.js";
+
 // Route modules: each exports an Express router handling related endpoints
 import authRoutes from "./routes/auth.route.js"; // /api/auth
 import adminAuthRoutes from "./routes/admin.auth.route.js"; // /api/admin/auth
@@ -15,6 +19,12 @@ import EditingStudentRoutes from "./routes/EditingStudentRoutes.js"; // /api/Edi
 import fromRoutes from "./routes/formRoutes.js"; // /api/form
 import userActivityRoutes from "./routes/userActivity.routes.js"; // /api/user-activity
 import userRoutes from "./routes/user.routes.js"; // /api/users
+import allowedEmailRoutes from "./routes/allowedEmail.routes.js"; // /api/allowed-emails
+import analyticsRoutes from "./routes/analytics.route.js"; // /api/analytics
+import teacherRoutes from "./routes/teacher.route.js"; // /api/teacher
+import eventRoutes from "./routes/event.route.js"; // /api/events
+import messageRoutes from "./routes/message.route.js"; // /api/messages
+import subjectRoutes from "./routes/subject.route.js"; // /api/subjects
 
 // Load environment variables from appropriate .env file
 // In production you can use '.env.production' otherwise default to '.env'
@@ -23,12 +33,11 @@ dotenv.config({
 });
 
 // Compute __dirname for ES modules
-// import.meta.url is the module's URL; fileURLToPath converts it to a file path
+// import.meta.url is the module's URL; fileURLToPath converts it to a file path (ESM)
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 
-// Create Express app instance and define the port
-const app = express();
+// app is imported from socket.js
 const PORT = process.env.PORT || 5000; // fallback to 5000 if not set
 
 // Global middleware
@@ -119,6 +128,38 @@ if (process.env.NODE_ENV !== "production") {
 }
 app.use("/api/users", userRoutes);
 
+if (process.env.NODE_ENV !== "production") {
+  console.log("Registering route: /api/allowed-emails");
+}
+app.use("/api/allowed-emails", allowedEmailRoutes);
+
+if (process.env.NODE_ENV !== "production") {
+  console.log("Registering route: /api/analytics");
+}
+app.use("/api/analytics", analyticsRoutes);
+
+if (process.env.NODE_ENV !== "production") {
+  console.log("Registering route: /api/teacher");
+}
+app.use("/api/teacher", teacherRoutes);
+app.use("/api/events", eventRoutes);
+
+if (process.env.NODE_ENV !== "production") {
+  console.log("Registering route: /api/messages");
+}
+app.use("/api/messages", messageRoutes);
+
+if (process.env.NODE_ENV !== "production") {
+  console.log("Registering route: /api/subjects");
+}
+app.use("/api/subjects", subjectRoutes);
+
+import branchRoutes from "./routes/branch.route.js";
+if (process.env.NODE_ENV !== "production") {
+  console.log("Registering route: /api/branches");
+}
+app.use("/api/branches", branchRoutes);
+
 // Diagnostic endpoint that reports which routes were registered and DB status
 app.get("/api/routes-status", (req, res) => {
   const routes = [
@@ -129,6 +170,8 @@ app.get("/api/routes-status", (req, res) => {
     { path: "/api/form", status: "registered" },
     { path: "/api/user-activity", status: "registered" },
     { path: "/api/users", status: "registered" },
+    { path: "/api/subjects", status: "registered" },
+    { path: "/api/analytics", status: "registered" },
   ];
 
   res.status(200).json({
@@ -174,7 +217,8 @@ const startServer = async () => {
     global.dbConnected = true; // Flag used by /api/routes-status
     console.log("✅ Database connection successful");
 
-    app.listen(PORT, () => {
+    // Use server.listen instead of app.listen for Socket.io
+    server.listen(PORT, () => {
       console.log(`✅ Server is running on port: ${PORT}`);
       console.log(`✅ Health check available at: http://localhost:${PORT}/api/health`);
       console.log(`✅ Routes status available at: http://localhost:${PORT}/api/routes-status`);

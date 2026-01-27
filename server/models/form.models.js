@@ -24,11 +24,15 @@ const recordSchema = new mongoose.Schema({
   section: String,
   year: String,
   semester: String,
-  section: String,
   subject: String,
+  subSubject: String,
   teacherName: String,
   aiTestDate: String,
+  aiTestDate: String,
+  subjectFile: String, // Path to subject file
+  subjectFileName: String,
   csvData: Object,
+  uploadBatchId: { type: mongoose.Schema.Types.ObjectId, index: true },
 }, { timestamps: true });
 
 // Create model

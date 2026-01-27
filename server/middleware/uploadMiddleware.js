@@ -108,26 +108,50 @@ const storage = multer.diskStorage({
   }
 });
 
-// File filter to only accept CSV files
+// File filter to accept CSV files and Subject files (PDF/Doc)
 const fileFilter = (req, file, cb) => {
-  const allowedTypes = [
-    'text/csv',
-    'application/vnd.ms-excel',
-    'application/csv',
-    'text/x-csv',
-    'application/x-csv',
-    'text/comma-separated-values',
-    'text/x-comma-separated-values',
-    'application/vnd.msexcel'
-  ];
+  if (file.fieldname === 'csvFile') {
+    const allowedTypes = [
+      'text/csv',
+      'application/vnd.ms-excel',
+      'application/csv',
+      'text/x-csv',
+      'application/x-csv',
+      'text/comma-separated-values',
+      'text/x-comma-separated-values',
+      'application/vnd.msexcel'
+    ];
+    const ext = path.extname(file.originalname).toLowerCase();
 
-  // Also check extension as a fallback since mime types can be unreliable
-  const ext = path.extname(file.originalname).toLowerCase();
+    if (allowedTypes.includes(file.mimetype) || ext === '.csv') {
+      cb(null, true);
+    } else {
+      cb(new Error('Invalid file type for Record Data. Only CSV files are allowed.'), false);
+    }
+  } else if (file.fieldname === 'subjectFile') {
+    // Check for Documents/Images for Subject File
+    const allowedTypes = [
+      'application/pdf',
+      'application/msword',
+      'application/vnd.openxmlformats-officedocument.wordprocessingml.document',
+      'text/plain',
+      'image/jpeg',
+      'image/png'
+    ];
 
-  if (allowedTypes.includes(file.mimetype) || ext === '.csv') {
-    cb(null, true);
+    if (allowedTypes.includes(file.mimetype)) {
+      cb(null, true);
+    } else {
+      // Relaxed check for extensions
+      const ext = path.extname(file.originalname).toLowerCase();
+      if (['.pdf', '.doc', '.docx', '.txt', '.jpg', '.jpeg', '.png'].includes(ext)) {
+        cb(null, true);
+      } else {
+        cb(new Error('Invalid file type for Subject File. Allowed: PDF, DOC, TXT, Images.'), false);
+      }
+    }
   } else {
-    cb(new Error('Invalid file type. Only CSV files are allowed.'), false);
+    cb(new Error('Unexpected field'), false);
   }
 };
 
@@ -136,7 +160,7 @@ const upload = multer({
   storage: storage,
   fileFilter: fileFilter,
   limits: {
-    fileSize: 1024 * 1024 * 5 // 5MB limit
+    fileSize: 1024 * 1024 * 10 // 10MB limit
   }
 });
 
@@ -176,4 +200,10 @@ const handleUploadErrors = (err, req, res, next) => {
   next();
 };
 
-export { upload, validateFormData, handleUploadErrors };
+// Message upload config
+const messageUpload = multer({
+  storage: storage,
+  limits: { fileSize: 10 * 1024 * 1024 } // 10MB
+});
+
+export { upload, messageUpload, validateFormData, handleUploadErrors };

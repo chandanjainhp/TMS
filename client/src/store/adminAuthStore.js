@@ -37,7 +37,7 @@ export const useAdminAuthStore = create((set, get) => ({
 				error: null,
 				isLoading: false,
 			});
-			
+
 			// Start session timeout for admins (15 minutes)
 			get().startSessionTimeout();
 		} catch (error) {
@@ -51,7 +51,7 @@ export const useAdminAuthStore = create((set, get) => ({
 		try {
 			// Clear session timeout
 			get().clearSessionTimeout();
-			
+
 			await axios.post(`${API_URL}/logout`);
 			set({ admin: null, isAuthenticated: false, error: null, isLoading: false });
 		} catch (error) {
@@ -65,7 +65,7 @@ export const useAdminAuthStore = create((set, get) => ({
 		try {
 			const response = await axios.get(`${API_URL}/check-auth`);
 			set({ admin: response.data.admin, isAuthenticated: true, isCheckingAuth: false });
-			
+
 			// Start session timeout if admin is authenticated
 			if (response.data.admin) {
 				get().startSessionTimeout();
@@ -103,24 +103,22 @@ export const useAdminAuthStore = create((set, get) => ({
 		}
 	},
 
-	// Start session timeout - 15 minutes for admins
+	// Start session timeout - 10 minutes for admins
 	startSessionTimeout: () => {
 		const state = get();
-		
+
 		// Clear any existing timeout
 		if (state.sessionTimeout) {
 			clearTimeout(state.sessionTimeout);
 		}
 
-		// Set timeout for 15 minutes (900000 milliseconds)
+		// Set timeout for 10 minutes (600000 milliseconds)
 		const timeout = setTimeout(() => {
 			console.log('Admin session timeout - logging out admin');
 			get().logout();
 			// Show notification
-			if (typeof window !== 'undefined' && window.toast) {
-				window.toast.error('Your admin session has expired. Please login again.');
-			}
-		}, 15 * 60 * 1000); // 15 minutes
+			toast.error('Your admin session has expired. Please login again.');
+		}, 10 * 60 * 1000); // 10 minutes
 
 		set({ sessionTimeout: timeout, lastActivity: Date.now() });
 	},

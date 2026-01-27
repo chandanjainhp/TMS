@@ -52,49 +52,50 @@ async function createAdminUser() {
   try {
     console.log('Connecting to MongoDB...');
     console.log('MongoDB URI:', process.env.MONGO_URI);
-    
+
     await mongoose.connect(process.env.MONGO_URI);
     console.log('Connected to MongoDB');
 
     // Check if admin user already exists
-    const existingUser = await User.findOne({ email: 'roots@gmail.com' });
-    
+    const existingUser = await User.findOne({ email: 'chandanjaincj93@gmail.com' });
+
     if (existingUser) {
       console.log('Admin user already exists. Updating password and role...');
-      
+
       // Hash the password
       const salt = await bcryptjs.genSalt(10);
-      const hashedPassword = await bcryptjs.hash('roots@123', salt);
-      
+      const hashedPassword = await bcryptjs.hash('Admin@123', salt);
+
       // Update the user
       existingUser.password = hashedPassword;
       existingUser.role = 'admin';
       existingUser.isVerified = true;
-      
+      existingUser.name = 'Chandan Jain';
+
       await existingUser.save();
       console.log('Admin user updated successfully!');
     } else {
       console.log('Creating new admin user...');
-      
+
       // Hash the password
       const salt = await bcryptjs.genSalt(10);
-      const hashedPassword = await bcryptjs.hash('roots@123', salt);
-      
+      const hashedPassword = await bcryptjs.hash('Admin@123', salt);
+
       // Create the admin user
       const adminUser = new User({
-        email: 'roots@gmail.com',
+        email: 'chandanjaincj93@gmail.com',
         password: hashedPassword,
-        name: 'Admin User',
+        name: 'Chandan Jain',
         role: 'admin',
         isVerified: true
       });
-      
+
       await adminUser.save();
       console.log('Admin user created successfully!');
     }
-    
+
     // Verify the admin user was created/updated
-    const adminUser = await User.findOne({ email: 'roots@gmail.com' });
+    const adminUser = await User.findOne({ email: 'chandanjaincj93@gmail.com' });
     console.log('Admin user details:');
     console.log({
       email: adminUser.email,
@@ -103,11 +104,11 @@ async function createAdminUser() {
       isVerified: adminUser.isVerified,
       createdAt: adminUser.createdAt
     });
-    
+
     // Disconnect from MongoDB
     await mongoose.disconnect();
     console.log('Disconnected from MongoDB');
-    
+
   } catch (error) {
     console.error('Error creating admin user:', error);
   }

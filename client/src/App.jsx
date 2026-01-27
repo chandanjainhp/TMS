@@ -11,6 +11,7 @@ import { Toaster } from "react-hot-toast";
 import { useAuthStore } from "./store/authStore";
 import { useAdminAuthStore } from "./store/adminAuthStore";
 import { useEffect } from "react";
+import { useSocketStore } from "./store/socketStore";
 import LandingPage from "./pages/LandingPage";
 import Header from "./components/common/Header";
 import SessionTimeoutTracker from "./components/common/SessionTimeoutTracker";
@@ -24,8 +25,20 @@ import RecordsPage from "./pages/RecordsPage";
 import FormDataPage from "./pages/FormDataPage";
 import AdminRecordsPage from "./pages/AdminRecordsPage";
 import AdminTeacherLogPage from "./pages/AdminTeacherLogPage";
+import ManageSubjectsPage from "./pages/ManageSubjectsPage";
 import AdminDashboardPage from "./pages/AdminDashboardPage";
 import AdminSettingsPage from "./pages/AdminSettingsPage";
+import AdminAnalyticsPage from "./pages/AdminAnalyticsPage";
+import StudentResultPage from "./pages/StudentResultPage";
+import MessagingPage from "./pages/MessagingPage";
+import AdminMessagesPage from "./pages/AdminMessagesPage";
+import TeacherDashboardPage from "./pages/TeacherDashboardPage";
+import {
+  AboutPage, FeaturesPage, PricingPage, SecurityPage,
+  DocumentationPage, GuidesPage, SupportPage,
+  BlogPage, CareersPage, PrivacyPage, TermsPage
+} from "./pages/StaticPages";
+
 
 // Protect routes that require authentication
 const ProtectedRoute = ({ children }) => {
@@ -70,6 +83,18 @@ const AdminRoute = ({ children }) => {
   return <Navigate to="/admin-login" replace />;
 };
 
+// Protect routes that require teacher privileges
+const TeacherRoute = ({ children }) => {
+  const { isAuthenticated, user } = useAuthStore();
+
+  if (isAuthenticated && user && (user.role === 'teacher' || user.role === 'admin')) {
+    return children;
+  }
+
+  console.log('User is not a teacher, redirecting to login');
+  return <Navigate to="/teacherlog" replace />;
+};
+
 // Redirect authenticated users to the appropriate page
 const RedirectAuthenticatedUser = ({ children }) => {
   const { isAuthenticated, user } = useAuthStore();
@@ -85,6 +110,10 @@ const RedirectAuthenticatedUser = ({ children }) => {
     else if (user.role === 'admin') {
       return <Navigate to="/admin" replace />;
     }
+    // If user is teacher, redirect to teacher dashboard
+    else if (user.role === 'teacher') {
+      return <Navigate to="/teacher-dashboard" replace />;
+    }
     // For regular users, redirect to settings
     else {
       return <Navigate to="/settings" replace />;
@@ -95,9 +124,21 @@ const RedirectAuthenticatedUser = ({ children }) => {
 };
 
 function App() {
-  const { isCheckingAuth, checkAuth } = useAuthStore();
-  const { checkAuth: checkAdminAuth } = useAdminAuthStore();
+  const { isCheckingAuth, checkAuth, user } = useAuthStore();
+  const { checkAuth: checkAdminAuth, admin } = useAdminAuthStore();
+  const { connectSocket, disconnectSocket } = useSocketStore();
   const location = useLocation();
+
+  const currentUser = admin || user;
+
+  // Socket connection management
+  useEffect(() => {
+    if (currentUser?._id) {
+      connectSocket(currentUser._id);
+    } else {
+      disconnectSocket();
+    }
+  }, [currentUser, connectSocket, disconnectSocket]);
 
   // Call checkAuth once when the app loads
   useEffect(() => {
@@ -111,7 +152,7 @@ function App() {
     };
 
     initAuth();
-  // eslint-disable-next-line react-hooks/exhaustive-deps
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   // Define routes that don't require the header
@@ -125,6 +166,12 @@ function App() {
     "/admin-login",
     "/admin/forgot-password",
     "/admin/reset-password-otp",
+    "/admin",
+    "/results",
+    "/teacher-dashboard",
+    "/about", "/features", "/pricing", "/security",
+    "/docs", "/guides", "/support",
+    "/blog", "/careers", "/privacy", "/terms"
   ];
 
   // Check if the current route needs the header
@@ -138,7 +185,7 @@ function App() {
     <div className="min-h-screen bg-white text-gray-900">
       {/* Session Timeout Tracker */}
       <SessionTimeoutTracker />
-      
+
       {/* Header should be outside the Routes for consistent rendering */}
       {showHeader && <Header />}
 
@@ -155,6 +202,15 @@ function App() {
             }
           />
 
+
+          <Route
+            path="/teacher-dashboard"
+            element={
+              <TeacherRoute>
+                <TeacherDashboardPage />
+              </TeacherRoute>
+            }
+          />
           <Route
             path="/teacherlog"
             element={
@@ -188,6 +244,14 @@ function App() {
               </ProtectedRoute>
             }
           />
+          <Route
+            path="/messages"
+            element={
+              <ProtectedRoute>
+                <MessagingPage />
+              </ProtectedRoute>
+            }
+          />
 
           {/* Admin routes */}
           <Route
@@ -195,6 +259,14 @@ function App() {
             element={
               <AdminRoute>
                 <AdminDashboardPage />
+              </AdminRoute>
+            }
+          />
+          <Route
+            path="/admin/subjects"
+            element={
+              <AdminRoute>
+                <ManageSubjectsPage />
               </AdminRoute>
             }
           />
@@ -219,6 +291,22 @@ function App() {
             element={
               <AdminRoute>
                 <AdminSettingsPage />
+              </AdminRoute>
+            }
+          />
+          <Route
+            path="/admin/analytics"
+            element={
+              <AdminRoute>
+                <AdminAnalyticsPage />
+              </AdminRoute>
+            }
+          />
+          <Route
+            path="/admin/messages"
+            element={
+              <AdminRoute>
+                <AdminMessagesPage />
               </AdminRoute>
             }
           />
@@ -269,6 +357,21 @@ function App() {
           <Route path="/verify-email" element={<EmailVerificationPage />} />
           <Route path="/forgot-password" element={<ForgotPasswordPage />} />
           <Route path="/reset-password" element={<ResetPasswordPage />} />
+          <Route path="/results" element={<StudentResultPage />} />
+
+          {/* Static Pages */}
+          <Route path="/about" element={<AboutPage />} />
+          <Route path="/features" element={<FeaturesPage />} />
+          <Route path="/pricing" element={<PricingPage />} />
+          <Route path="/security" element={<SecurityPage />} />
+          <Route path="/docs" element={<DocumentationPage />} />
+          <Route path="/guides" element={<GuidesPage />} />
+          <Route path="/support" element={<SupportPage />} />
+          <Route path="/blog" element={<BlogPage />} />
+          <Route path="/careers" element={<CareersPage />} />
+          <Route path="/privacy" element={<PrivacyPage />} />
+          <Route path="/terms" element={<TermsPage />} />
+
           <Route path="/login" element={<Navigate to="/login" replace />} />
 
           {/* Catch-all route */}

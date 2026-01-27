@@ -94,7 +94,7 @@ const ChangePassword = () => {
       <div className="relative">
         <input
           type={showPassword ? 'text' : 'password'}
-          className="w-full px-4 py-3 bg-gray-50 border border-gray-200 rounded-xl focus:ring-2 focus:ring-indigo-500 focus:border-transparent transition-all outline-none font-medium text-gray-700"
+          className="w-full px-3 py-2 bg-gray-50 border border-gray-200 rounded-lg focus:ring-1 focus:ring-indigo-500 focus:border-indigo-500 transition-all outline-none font-medium text-gray-700 text-sm"
           placeholder={placeholder}
           value={value}
           onChange={onChange}
@@ -118,12 +118,12 @@ const ChangePassword = () => {
         </div>
       )}
 
-      <div className="space-y-5">
+      <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
         <InputField
           label="Current Password"
           value={currentPassword}
           onChange={(e) => setCurrentPassword(e.target.value)}
-          placeholder="Enter current password"
+          placeholder="Current password"
           icon={KeyRound}
         />
 
@@ -131,7 +131,7 @@ const ChangePassword = () => {
           label="New Password"
           value={newPassword}
           onChange={(e) => setNewPassword(e.target.value)}
-          placeholder="Enter new strong password"
+          placeholder="New password"
           icon={Lock}
         />
 
@@ -139,28 +139,30 @@ const ChangePassword = () => {
           label="Confirm Password"
           value={confirmPassword}
           onChange={(e) => setConfirmPassword(e.target.value)}
-          placeholder="Re-enter new password"
+          placeholder="Confirm password"
           icon={ShieldCheck}
         />
+      </div>
 
-        <div className="flex items-center justify-between pt-2">
+      <div className="flex items-center justify-between pt-2 border-t border-gray-50 mt-2">
+        <div className="flex items-center gap-4">
           <button
             type="button"
             onClick={handlePasswordToggle}
-            className="text-sm font-medium text-gray-500 hover:text-indigo-600 transition-colors flex items-center gap-1"
+            className="text-xs font-medium text-gray-500 hover:text-indigo-600 transition-colors flex items-center gap-1.5 bg-gray-50 px-2 py-1.5 rounded hover:bg-gray-100"
           >
-            {showPassword ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
-            {showPassword ? 'Hide Characters' : 'Show Characters'}
+            {showPassword ? <EyeOff className="w-3.5 h-3.5" /> : <Eye className="w-3.5 h-3.5" />}
+            {showPassword ? 'Hide' : 'Show'}
           </button>
-          <p className="text-xs text-gray-400 max-w-[200px] text-right">
-            8+ chars, uppercase, number & symbol required.
-          </p>
+          <span className="text-[10px] text-gray-400 hidden sm:inline-block">
+            Requirements: 8+ chars, 1 uppercase, 1 number, 1 symbol.
+          </span>
         </div>
 
         <button
           onClick={handleChangePassword}
           disabled={isLoading}
-          className={`w-full py-3.5 rounded-xl font-bold text-white shadow-lg shadow-indigo-200 hover:shadow-xl hover:translate-y-[-1px] transition-all flex items-center justify-center gap-2 ${isLoading
+          className={`px-4 py-2 rounded-lg font-bold text-white text-xs shadow-md shadow-indigo-100 hover:shadow-lg transition-all flex items-center gap-2 ${isLoading
             ? 'bg-gray-300 cursor-not-allowed'
             : 'bg-indigo-600 hover:bg-indigo-700'
             }`}

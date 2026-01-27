@@ -1,8 +1,9 @@
 import { useState, useEffect } from 'react';
 import axios from 'axios';
 import { format } from 'date-fns';
+import { Search, Plus, Calendar, Filter, Download, UserCheck, UserPlus, Users, Activity } from 'lucide-react';
 
-// DatePicker component with updated colors
+// DatePicker component
 const DatePicker = ({ value, onChange }) => (
   <input
     type="date"
@@ -11,8 +12,6 @@ const DatePicker = ({ value, onChange }) => (
     className="w-full p-2 bg-white text-gray-800 border border-indigo-200 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 transition-all"
   />
 );
-
-// No wrapper component needed
 
 const AdminTeacherLog = () => {
   const [startDate, setStartDate] = useState(null);
@@ -25,36 +24,26 @@ const AdminTeacherLog = () => {
   const [currentPage, setCurrentPage] = useState(1);
   const itemsPerPage = 10;
 
-  // Fetch users from the server
+  // Modal State
+  const [isModalOpen, setIsModalOpen] = useState(false);
+  const [newEmail, setNewEmail] = useState('');
+  const [addEmailLoading, setAddEmailLoading] = useState(false);
+  const [addEmailMessage, setAddEmailMessage] = useState(null);
+
   useEffect(() => {
     const fetchUsers = async () => {
       try {
         setLoading(true);
-
-        // Build query parameters
         const params = {};
-        if (startDate) {
-          params.startDate = format(startDate, 'yyyy-MM-dd');
-        }
-        if (endDate) {
-          params.endDate = format(endDate, 'yyyy-MM-dd');
-        }
+        if (startDate) params.startDate = format(startDate, 'yyyy-MM-dd');
+        if (endDate) params.endDate = format(endDate, 'yyyy-MM-dd');
 
-        // Fetch users
-        const response = await axios.get('http://localhost:5000/api/users', {
-          params,
-          withCredentials: true
-        });
+        const response = await axios.get('http://localhost:5000/api/users', { params, withCredentials: true });
 
         if (response.data.success) {
           setUsers(response.data.data);
           setError(null);
-
-          // Fetch user stats
-          const statsResponse = await axios.get('http://localhost:5000/api/users/stats', {
-            withCredentials: true
-          });
-
+          const statsResponse = await axios.get('http://localhost:5000/api/users/stats', { withCredentials: true });
           if (statsResponse.data.success) {
             setStats(statsResponse.data.data);
           }
@@ -68,48 +57,49 @@ const AdminTeacherLog = () => {
         setLoading(false);
       }
     };
-
     fetchUsers();
   }, [startDate, endDate]);
 
-  // Filter users by search term
+  const handleAddEmail = async (e) => {
+    e.preventDefault();
+    setAddEmailLoading(true);
+    setAddEmailMessage(null);
+    try {
+      const response = await axios.post(
+        'http://localhost:5000/api/allowed-emails/add',
+        { email: newEmail },
+        { withCredentials: true }
+      );
+      setAddEmailMessage({ type: 'success', text: response.data.message });
+      setNewEmail('');
+      setTimeout(() => {
+        setIsModalOpen(false);
+        setAddEmailMessage(null);
+      }, 2000);
+    } catch (err) {
+      setAddEmailMessage({
+        type: 'error',
+        text: err.response?.data?.message || 'Failed to add email'
+      });
+    } finally {
+      setAddEmailLoading(false);
+    }
+  };
+
   const filteredUsers = users.filter((user) => {
-    // Search in user name and email
     const userName = user.name || '';
     const userEmail = user.email || '';
-
     return (
       userName.toLowerCase().includes(searchTerm.toLowerCase()) ||
       userEmail.toLowerCase().includes(searchTerm.toLowerCase())
     );
   });
 
-  // Format date for display
   const formatDate = (dateString) => {
     if (!dateString) return 'Never';
     return format(new Date(dateString), 'MMM dd, yyyy HH:mm');
   };
 
-  // Get verification status badge - updated colors
-  const getVerificationBadge = (isVerified) => {
-    return isVerified ?
-      <span className="px-2 py-1 rounded text-xs bg-green-100 text-green-800 border border-green-200">Verified</span> :
-      <span className="px-2 py-1 rounded text-xs bg-red-100 text-red-800 border border-red-200">Not Verified</span>;
-  };
-
-  // Get role badge - updated colors
-  const getRoleBadge = (role) => {
-    switch (role) {
-      case 'admin':
-        return <span className="px-2 py-1 rounded text-xs bg-indigo-100 text-indigo-800 border border-indigo-200">Admin</span>;
-      case 'teacher':
-        return <span className="px-2 py-1 rounded text-xs bg-blue-100 text-blue-800 border border-blue-200">Teacher</span>;
-      default:
-        return <span className="px-2 py-1 rounded text-xs bg-gray-100 text-gray-800 border border-gray-200">User</span>;
-    }
-  };
-
-  // Pagination
   const totalPages = Math.ceil(filteredUsers.length / itemsPerPage);
   const currentUsers = filteredUsers.slice(
     (currentPage - 1) * itemsPerPage,
@@ -117,201 +107,233 @@ const AdminTeacherLog = () => {
   );
 
   return (
-      <div className="bg-white rounded-xl shadow-lg p-6 border border-gray-200">
-        <h2 className="text-3xl font-bold mb-6 bg-gradient-to-r from-indigo-600 to-purple-600 bg-clip-text text-transparent">
-          Teacher Activity Log
-        </h2>
+    <div className="w-full">
+      {/* Header & Actions - Super Compact */}
+      <div className="flex flex-col md:flex-row md:items-center justify-between gap-3 mb-4">
+        <div>
+          <h1 className="text-xl font-bold text-gray-900 tracking-tight">Teacher Registry</h1>
+        </div>
+        <button
+          onClick={() => setIsModalOpen(true)}
+          className="inline-flex items-center gap-1.5 bg-indigo-600 hover:bg-indigo-700 text-white px-3 py-1.5 rounded-lg font-semibold shadow-sm transition-all text-xs"
+        >
+          <Plus className="h-3.5 w-3.5" />
+          Add Allowed Teacher
+        </button>
+      </div>
 
-        {/* Stats Cards */}
-        {stats && (
-          <div className="grid grid-cols-1 md:grid-cols-4 gap-4 mb-6">
-            <div className="bg-gradient-to-br from-indigo-50 to-indigo-100 p-4 rounded-xl shadow-md border border-indigo-200 hover:shadow-lg transition-shadow">
-              <h3 className="text-sm font-semibold text-indigo-900 mb-2">Total Users</h3>
-              <p className="text-3xl font-bold bg-gradient-to-r from-indigo-600 to-purple-600 bg-clip-text text-transparent">{stats.totalUsers}</p>
+      {/* Stats Overview - Compact Grid */}
+      {stats && (
+        <div className="grid grid-cols-2 md:grid-cols-4 gap-3 mb-4">
+          <div className="bg-white p-3 rounded-lg border border-gray-100 shadow-sm flex items-center justify-between">
+            <div>
+              <p className="text-[10px] font-medium text-gray-500 uppercase tracking-wide">Total Users</p>
+              <p className="text-xl font-bold text-gray-900 leading-tight">{stats.totalUsers}</p>
             </div>
-            <div className="bg-gradient-to-br from-green-50 to-green-100 p-4 rounded-xl shadow-md border border-green-200 hover:shadow-lg transition-shadow">
-              <h3 className="text-sm font-semibold text-green-900 mb-2">Verified Users</h3>
-              <p className="text-3xl font-bold text-green-600">{stats.verifiedUsers}</p>
-            </div>
-            <div className="bg-gradient-to-br from-purple-50 to-purple-100 p-4 rounded-xl shadow-md border border-purple-200 hover:shadow-lg transition-shadow">
-              <h3 className="text-sm font-semibold text-purple-900 mb-2">New Users (30d)</h3>
-              <p className="text-3xl font-bold text-purple-600">{stats.newUsers}</p>
-            </div>
-            <div className="bg-gradient-to-br from-amber-50 to-amber-100 p-4 rounded-xl shadow-md border border-amber-200 hover:shadow-lg transition-shadow">
-              <h3 className="text-sm font-semibold text-amber-900 mb-2">Active Users (7d)</h3>
-              <p className="text-3xl font-bold text-amber-600">{stats.activeUsers}</p>
+            <div className="p-1.5 bg-indigo-50 text-indigo-600 rounded">
+              <Users className="h-4 w-4" />
             </div>
           </div>
-        )}
-
-        {/* Filters */}
-        <div className="bg-gradient-to-br from-indigo-50 to-purple-50 p-6 rounded-xl mb-6 border border-indigo-100 shadow-sm">
-          <h3 className="text-lg font-semibold mb-4 text-indigo-900">Filters</h3>
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
+          <div className="bg-white p-3 rounded-lg border border-gray-100 shadow-sm flex items-center justify-between">
             <div>
-              <label className="block text-sm font-medium mb-2 text-gray-700">Start Date</label>
-              <DatePicker
-                value={startDate}
-                onChange={setStartDate}
-                className="w-full bg-gray-600 text-white"
-                slotProps={{
-                  textField: {
-                    fullWidth: true,
-                    variant: 'outlined',
-                    InputProps: {
-                      className: 'text-white',
-                    }
-                  }
-                }}
-              />
+              <p className="text-[10px] font-medium text-gray-500 uppercase tracking-wide">Verified</p>
+              <p className="text-xl font-bold text-green-600 leading-tight">{stats.verifiedUsers}</p>
             </div>
-            <div>
-              <label className="block text-sm font-medium mb-2 text-gray-700">End Date</label>
-              <DatePicker
-                value={endDate}
-                onChange={setEndDate}
-                className="w-full bg-gray-600 text-white"
-                slotProps={{
-                  textField: {
-                    fullWidth: true,
-                    variant: 'outlined',
-                    InputProps: {
-                      className: 'text-white',
-                    }
-                  }
-                }}
-              />
+            <div className="p-1.5 bg-green-50 text-green-600 rounded">
+              <UserCheck className="h-4 w-4" />
             </div>
           </div>
-
-          <div className="relative">
-            <input
-              type="text"
-              placeholder="Search by name or email..."
-              value={searchTerm}
-              onChange={(e) => setSearchTerm(e.target.value)}
-              className="p-3 w-full bg-white text-gray-800 border border-indigo-200 rounded-lg pl-10 focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 transition-all"
-            />
-            <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-              <svg className="h-5 w-5 text-indigo-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
-              </svg>
+          <div className="bg-white p-3 rounded-lg border border-gray-100 shadow-sm flex items-center justify-between">
+            <div>
+              <p className="text-[10px] font-medium text-gray-500 uppercase tracking-wide">New (30d)</p>
+              <p className="text-xl font-bold text-purple-600 leading-tight">{stats.newUsers}</p>
+            </div>
+            <div className="p-1.5 bg-purple-50 text-purple-600 rounded">
+              <UserPlus className="h-4 w-4" />
+            </div>
+          </div>
+          <div className="bg-white p-3 rounded-lg border border-gray-100 shadow-sm flex items-center justify-between">
+            <div>
+              <p className="text-[10px] font-medium text-gray-500 uppercase tracking-wide">Active (7d)</p>
+              <p className="text-xl font-bold text-amber-600 leading-tight">{stats.activeUsers}</p>
+            </div>
+            <div className="p-1.5 bg-amber-50 text-amber-600 rounded">
+              <Activity className="h-4 w-4" />
             </div>
           </div>
         </div>
+      )}
 
-        {/* Error Message */}
-        {error && (
-          <div className="bg-red-50 border border-red-200 text-red-800 p-4 rounded-lg mb-4 flex items-center">
-            <svg className="w-5 h-5 mr-2" fill="currentColor" viewBox="0 0 20 20">
-              <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zM8.707 7.293a1 1 0 00-1.414 1.414L8.586 10l-1.293 1.293a1 1 0 101.414 1.414L10 11.414l1.293 1.293a1 1 0 001.414-1.414L11.414 10l1.293-1.293a1 1 0 00-1.414-1.414L10 8.586 8.707 7.293z" clipRule="evenodd"/>
-            </svg>
-            {error}
+      {/* Main Content Area */}
+      <div className="bg-white rounded-lg border border-gray-200 overflow-hidden shadow-sm">
+        {/* Filters Bar - Compact */}
+        <div className="p-3 border-b border-gray-200 bg-gray-50/50 flex flex-col lg:flex-row gap-2 justify-between items-center">
+          <div className="relative flex-1 w-full lg:max-w-xs">
+            <Search className="absolute left-2.5 top-1/2 -translate-y-1/2 h-3.5 w-3.5 text-gray-400" />
+            <input
+              type="text"
+              placeholder="Search users..."
+              value={searchTerm}
+              onChange={(e) => setSearchTerm(e.target.value)}
+              className="w-full pl-8 pr-2 py-1.5 bg-white border border-gray-300 rounded focus:ring-1 focus:ring-indigo-500 focus:border-indigo-500 text-xs"
+            />
           </div>
-        )}
 
-        {/* Loading Indicator */}
-        {loading ? (
-          <div className="flex justify-center items-center py-12">
-            <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-indigo-600"></div>
+          <div className="flex gap-2 w-full lg:w-auto overflow-x-auto pb-1 lg:pb-0">
+            <input
+              type="date"
+              onChange={(e) => setStartDate(new Date(e.target.value))}
+              className="px-2 py-1.5 bg-white border border-gray-300 rounded text-xs"
+            />
+            <input
+              type="date"
+              onChange={(e) => setEndDate(new Date(e.target.value))}
+              className="px-2 py-1.5 bg-white border border-gray-300 rounded text-xs"
+            />
+            <button className="px-3 py-1.5 bg-white border border-gray-300 rounded text-gray-700 hover:bg-gray-50 flex items-center gap-1.5 text-xs whitespace-nowrap">
+              <Filter className="h-3 w-3" /> Filters
+            </button>
           </div>
-        ) : (
-          <>
-            {/* Users Count */}
-            <div className="mb-4 text-gray-700 font-medium">
-              {filteredUsers.length} user(s) found
+        </div>
+
+        {/* Table - Dense */}
+        <div className="overflow-x-auto">
+          <table className="w-full text-left">
+            <thead className="bg-gray-50 border-b border-gray-200">
+              <tr>
+                <th className="px-4 py-2 text-[10px] font-bold text-gray-500 uppercase tracking-wider">User</th>
+                <th className="px-4 py-2 text-[10px] font-bold text-gray-500 uppercase tracking-wider">Role</th>
+                <th className="px-4 py-2 text-[10px] font-bold text-gray-500 uppercase tracking-wider">Status</th>
+                <th className="px-4 py-2 text-[10px] font-bold text-gray-500 uppercase tracking-wider">Last Active</th>
+                <th className="px-4 py-2 text-[10px] font-bold text-gray-500 uppercase tracking-wider">Joined</th>
+              </tr>
+            </thead>
+            <tbody className="divide-y divide-gray-200">
+              {loading ? (
+                <tr><td colSpan="5" className="p-4 text-center text-xs text-gray-500">Loading records...</td></tr>
+              ) : currentUsers.map((user) => (
+                <tr key={user._id} className="hover:bg-gray-50 transition-colors">
+                  <td className="px-4 py-2">
+                    <div className="flex items-center gap-2">
+                      <div className="h-6 w-6 rounded-full bg-indigo-100 flex items-center justify-center text-indigo-700 font-bold text-xs">
+                        {user.name ? user.name.charAt(0).toUpperCase() : 'U'}
+                      </div>
+                      <div>
+                        <p className="font-semibold text-gray-900 text-xs">{user.name || 'Unknown User'}</p>
+                        <p className="text-[10px] text-gray-500">{user.email}</p>
+                      </div>
+                    </div>
+                  </td>
+                  <td className="px-4 py-2">
+                    <span className={`px-1.5 py-0.5 rounded text-[10px] font-bold uppercase tracking-wide
+                      ${user.role === 'admin' ? 'bg-purple-100 text-purple-700' :
+                        user.role === 'teacher' ? 'bg-indigo-100 text-indigo-700' : 'bg-gray-100 text-gray-700'}`}>
+                      {user.role}
+                    </span>
+                  </td>
+                  <td className="px-4 py-2">
+                    {user.isVerified ? (
+                      <span className="inline-flex items-center gap-1 text-green-600 bg-green-50 px-1.5 py-0.5 rounded text-[10px] font-bold">
+                        <UserCheck className="h-3 w-3" /> Verified
+                      </span>
+                    ) : (
+                      <span className="inline-flex items-center gap-1 text-amber-600 bg-amber-50 px-1.5 py-0.5 rounded text-[10px] font-bold">
+                        Pending
+                      </span>
+                    )}
+                  </td>
+                  <td className="px-4 py-2 text-xs text-gray-600">
+                    {formatDate(user.lastLogin)}
+                  </td>
+                  <td className="px-4 py-2 text-xs text-gray-600">
+                    {formatDate(user.createdAt)}
+                  </td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+
+          {!loading && currentUsers.length === 0 && (
+            <div className="p-4 text-center text-gray-500 text-xs">
+              No users found matching your search.
+            </div>
+          )}
+        </div>
+
+        {/* Pagination - Compact */}
+        <div className="px-4 py-2 border-t border-gray-200 flex items-center justify-between">
+          <span className="text-[10px] text-gray-500">
+            Showing {((currentPage - 1) * itemsPerPage) + 1}-{Math.min(currentPage * itemsPerPage, filteredUsers.length)} of {filteredUsers.length}
+          </span>
+          <div className="flex gap-1">
+            <button
+              onClick={() => setCurrentPage(prev => Math.max(prev - 1, 1))}
+              disabled={currentPage === 1}
+              className="px-2 py-1 border border-gray-300 rounded text-[10px] font-medium hover:bg-gray-50 disabled:opacity-50"
+            >
+              Prev
+            </button>
+            <button
+              onClick={() => setCurrentPage(prev => Math.min(prev + 1, totalPages))}
+              disabled={currentPage === totalPages}
+              className="px-2 py-1 border border-gray-300 rounded text-[10px] font-medium hover:bg-gray-50 disabled:opacity-50"
+            >
+              Next
+            </button>
+          </div>
+        </div>
+      </div>
+
+      {/* Add Teacher Modal */}
+      {isModalOpen && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm animate-in fade-in duration-200">
+          <div className="bg-white rounded-2xl shadow-xl w-full max-w-md overflow-hidden animate-in zoom-in-95 duration-200">
+            <div className="p-6 bg-slate-900 text-white">
+              <h3 className="text-xl font-bold">Allow Teacher Signup</h3>
+              <p className="text-slate-300 text-sm mt-1">Whitelist an email address for new teacher registration.</p>
             </div>
 
-            {/* Users Table */}
-            {filteredUsers.length > 0 ? (
-              <>
-                <div className="overflow-x-auto rounded-xl shadow-lg border border-gray-200">
-                  <table className="w-full bg-white text-sm md:text-base">
-                    <thead>
-                      <tr className="bg-gradient-to-r from-indigo-600 to-purple-600 text-white">
-                        <th className="px-4 py-4 text-left text-xs font-semibold uppercase tracking-wider">#</th>
-                        <th className="px-4 py-4 text-left text-xs font-semibold uppercase tracking-wider">Name</th>
-                        <th className="px-4 py-4 text-left text-xs font-semibold uppercase tracking-wider">Email</th>
-                        <th className="px-4 py-4 text-left text-xs font-semibold uppercase tracking-wider">Role</th>
-                        <th className="px-4 py-4 text-left text-xs font-semibold uppercase tracking-wider">Status</th>
-                        <th className="px-4 py-4 text-left text-xs font-semibold uppercase tracking-wider">Last Login</th>
-                        <th className="px-4 py-4 text-left text-xs font-semibold uppercase tracking-wider">Registered</th>
-                      </tr>
-                    </thead>
-                    <tbody className="divide-y divide-gray-200">
-                      {currentUsers.map((user, index) => (
-                        <tr key={user._id} className={`hover:bg-indigo-50 transition-colors ${index % 2 === 0 ? 'bg-white' : 'bg-indigo-50/30'}`}>
-                          <td className="px-4 py-3 text-gray-900">{(currentPage - 1) * itemsPerPage + index + 1}</td>
-                          <td className="px-4 py-3">
-                            <div className="font-semibold text-gray-900">{user.name || 'Unknown'}</div>
-                          </td>
-                          <td className="px-4 py-3 text-gray-700">{user.email || 'Unknown'}</td>
-                          <td className="px-4 py-3">
-                            {getRoleBadge(user.role)}
-                          </td>
-                          <td className="px-4 py-3">
-                            {getVerificationBadge(user.isVerified)}
-                          </td>
-                          <td className="px-4 py-3 text-gray-700">
-                            {formatDate(user.lastLogin)}
-                          </td>
-                          <td className="px-4 py-3 text-gray-700">
-                            {formatDate(user.createdAt)}
-                          </td>
-                        </tr>
-                      ))}
-                    </tbody>
-                  </table>
+            <form onSubmit={handleAddEmail} className="p-6">
+              {addEmailMessage && (
+                <div className={`mb-4 p-3 rounded-lg text-sm font-medium ${addEmailMessage.type === 'success' ? 'bg-green-50 text-green-700' : 'bg-red-50 text-red-700'
+                  }`}>
+                  {addEmailMessage.text}
                 </div>
+              )}
 
-                {/* Pagination */}
-                {totalPages > 1 && (
-                  <div className="flex justify-center mt-6 space-x-2">
-                    <button
-                      onClick={() => setCurrentPage(1)}
-                      disabled={currentPage === 1}
-                      className="px-4 py-2 bg-white border border-indigo-300 text-indigo-600 rounded-lg disabled:opacity-50 disabled:cursor-not-allowed hover:bg-indigo-50 transition-all shadow-sm"
-                    >
-                      &laquo;
-                    </button>
-                    <button
-                      onClick={() => setCurrentPage(prev => Math.max(prev - 1, 1))}
-                      disabled={currentPage === 1}
-                      className="px-4 py-2 bg-white border border-indigo-300 text-indigo-600 rounded-lg disabled:opacity-50 disabled:cursor-not-allowed hover:bg-indigo-50 transition-all shadow-sm"
-                    >
-                      &lt;
-                    </button>
-                    <span className="px-4 py-2 bg-gradient-to-r from-indigo-600 to-purple-600 text-white rounded-lg font-medium shadow-md">
-                      Page {currentPage} of {totalPages}
-                    </span>
-                    <button
-                      onClick={() => setCurrentPage(prev => Math.min(prev + 1, totalPages))}
-                      disabled={currentPage === totalPages}
-                      className="px-4 py-2 bg-white border border-indigo-300 text-indigo-600 rounded-lg disabled:opacity-50 disabled:cursor-not-allowed hover:bg-indigo-50 transition-all shadow-sm"
-                    >
-                      &gt;
-                    </button>
-                    <button
-                      onClick={() => setCurrentPage(totalPages)}
-                      disabled={currentPage === totalPages}
-                      className="px-4 py-2 bg-white border border-indigo-300 text-indigo-600 rounded-lg disabled:opacity-50 disabled:cursor-not-allowed hover:bg-indigo-50 transition-all shadow-sm"
-                    >
-                      &raquo;
-                    </button>
-                  </div>
-                )}
-              </>
-            ) : (
-              <div className="bg-gradient-to-br from-indigo-50 to-purple-50 p-12 rounded-xl text-center border border-indigo-200">
-                <svg className="mx-auto h-12 w-12 text-indigo-400 mb-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4.354a4 4 0 110 5.292M15 21H3v-1a6 6 0 0112 0v1zm0 0h6v-1a6 6 0 00-9-5.197M13 7a4 4 0 11-8 0 4 4 0 018 0z" />
-                </svg>
-                <p className="text-gray-700 font-medium">No users found. Try adjusting your search.</p>
+              <div className="mb-4">
+                <label className="block text-sm font-semibold text-gray-700 mb-2">Teacher Email Address</label>
+                <input
+                  type="email"
+                  required
+                  value={newEmail}
+                  onChange={(e) => setNewEmail(e.target.value)}
+                  placeholder="e.g. teacher@university.edu"
+                  className="w-full px-4 py-2.5 rounded-lg border border-gray-300 focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 outline-none transition-all"
+                />
               </div>
-            )}
-          </>
-        )}
-      </div>
+
+              <div className="flex justify-end gap-3 mt-6">
+                <button
+                  type="button"
+                  onClick={() => setIsModalOpen(false)}
+                  className="px-4 py-2.5 rounded-lg text-gray-700 hover:bg-gray-100 font-medium transition-colors"
+                >
+                  Cancel
+                </button>
+                <button
+                  type="submit"
+                  disabled={addEmailLoading}
+                  className="px-6 py-2.5 rounded-lg bg-indigo-600 hover:bg-indigo-700 text-white font-medium shadow-md hover:shadow-lg transition-all disabled:opacity-70 disabled:cursor-not-allowed flex items-center gap-2"
+                >
+                  {addEmailLoading ? "Adding..." : "Allow Email"}
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
+    </div>
   );
 };
 

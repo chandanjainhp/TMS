@@ -1,18 +1,23 @@
 import csv from 'csv-parser';
 import fs from 'fs';
 import path from 'path';
+import mongoose from 'mongoose';
 import Record from '../models/form.models.js';
 
 export const uploadRecords = async (req, res) => {
   try {
-    const { department, branch, section, year, semester, subject, teacherName, aiTestDate } = req.body;
-    const csvFile = req.file;
+    const { department, branch, section, year, semester, subject, subSubject, teacherName, aiTestDate } = req.body;
+
+    // Handle multiple files
+    const files = req.files || {};
+    const csvFile = files['csvFile'] ? files['csvFile'][0] : null;
+    const subjectFile = files['subjectFile'] ? files['subjectFile'][0] : null;
 
     // Validation
-    if (!department || !branch || !section || !year || !semester || !subject || !teacherName || !aiTestDate) {
+    if (!department || !branch || !section || !year || !semester || !subject || !subSubject || !teacherName || !aiTestDate) {
       return res.status(400).json({
         success: false,
-        message: 'All fields are required: department, branch, section, year, semester, subject, teacherName, aiTestDate',
+        message: 'All fields are required: department, branch, section, year, semester, subject, subSubject, teacherName, aiTestDate',
       });
     }
 
@@ -25,6 +30,9 @@ export const uploadRecords = async (req, res) => {
 
     const filePath = path.resolve(csvFile.path);
     const results = [];
+
+    // Generate a unique batch ID for this upload
+    const uploadBatchId = new mongoose.Types.ObjectId();
 
     fs.createReadStream(filePath)
       .pipe(csv())
@@ -39,9 +47,14 @@ export const uploadRecords = async (req, res) => {
             year,
             semester,
             subject,
+            subSubject,
             teacherName,
             aiTestDate,
+            aiTestDate,
+            subjectFile: subjectFile ? subjectFile.path : null,
+            subjectFileName: subjectFile ? subjectFile.originalname : null,
             csvData: row,
+            uploadBatchId, // Assign the batch ID
           }));
 
           // Save to database
@@ -57,7 +70,9 @@ export const uploadRecords = async (req, res) => {
               year,
               teacherName,
               aiTestDate,
-              file: csvFile.originalname
+              file: csvFile.originalname,
+              subjectFile: subjectFile ? subjectFile.originalname : null,
+              batchId: uploadBatchId
             }
           });
 
@@ -84,6 +99,44 @@ export const uploadRecords = async (req, res) => {
   }
 };
 
+// Get upload batches (summary view)
+export const getUploadBatches = async (req, res) => {
+  try {
+    if (!req.userId) {
+      return res.status(401).json({ success: false, message: 'Authentication required' });
+    }
+
+    // Aggregate records by uploadBatchId
+    const batches = await Record.aggregate([
+      {
+        $group: {
+          _id: "$uploadBatchId",
+          department: { $first: "$department" },
+          section: { $first: "$section" },
+          subject: { $first: "$subject" },
+          teacherName: { $first: "$teacherName" },
+          year: { $first: "$year" },
+          createdAt: { $first: "$createdAt" }, // Use the creation time of the first record found
+          count: { $sum: 1 }
+        }
+      },
+      { $sort: { createdAt: -1 } } // Sort by newest first
+    ]);
+
+    // Attempt to handle legacy records that don't have an uploadBatchId
+    // We can group them by a time window or just list them as "Legacy Uploads"
+    // For now, let's just return what we have. Records without uploadBatchId will have _id: null in grouping.
+
+    res.json({
+      success: true,
+      data: batches
+    });
+  } catch (error) {
+    console.error('Error fetching batches:', error);
+    res.status(500).json({ success: false, message: 'Failed to fetch upload batches', error: error.message });
+  }
+};
+
 // Get records with sorting and filtering (accessible to all authenticated users)
 export const getRecords = async (req, res) => {
   try {
@@ -107,13 +160,24 @@ export const getRecords = async (req, res) => {
       });
     }
 
-    const { department, section, year, sortField, sortOrder, search, groupByDate } = req.query;
+    const { department, section, year, sortField, sortOrder, search, groupByDate, batchId } = req.query;
 
     // Build query based on filters
     let query = {};
     if (department) query.department = department;
     if (section) query.section = section;
     if (year) query.year = year;
+    if (batchId) query.uploadBatchId = batchId; // Add batchId filter
+
+    // Role-based Access Control
+    // Default: Restrict to own uploads if not admin
+    // If 'publicView' is true, allow viewing all records (for Student Records / Repository view)
+    const isPublicView = req.query.publicView === 'true';
+
+    if (user.role !== 'admin' && !isPublicView) {
+      // Strict management mode: only see own records
+      query.teacherName = user.name;
+    }
 
     // Add search functionality
     if (search) {
@@ -122,6 +186,8 @@ export const getRecords = async (req, res) => {
         { department: { $regex: search, $options: 'i' } },
         { section: { $regex: search, $options: 'i' } },
         { year: { $regex: search, $options: 'i' } },
+        // For teacher, teacherName is already fixed, so searching it is redundant but harmless
+        // For admin, valid to search by teacherName
         { teacherName: { $regex: search, $options: 'i' } },
         // Search in CSV data fields would require more complex query
       ];
@@ -278,10 +344,11 @@ export const deleteRecord = async (req, res) => {
     const user = await User.findById(req.userId);
 
     // Check if user is admin
-    if (!user || user.role !== 'admin') {
+    // Check if user is admin OR teacher
+    if (!user || (user.role !== 'admin' && user.role !== 'teacher')) {
       return res.status(403).json({
         success: false,
-        message: 'Access denied. Admin privileges required.'
+        message: 'Access denied. Privileged access required.'
       });
     }
 
@@ -294,19 +361,45 @@ export const deleteRecord = async (req, res) => {
       });
     }
 
-    const deletedRecord = await Record.findByIdAndDelete(id);
-
-    if (!deletedRecord) {
+    // Find record first
+    const record = await Record.findById(id);
+    if (!record) {
       return res.status(404).json({
         success: false,
         message: 'Record not found'
       });
     }
 
+    // If user is a teacher, apply restrictions:
+    // 1. Must be their own record
+    // 2. Must be within 36 hours (1 day 12 hours) - "roll back" window
+    if (user.role === 'teacher') {
+      if (record.teacherName !== user.name) {
+        return res.status(403).json({
+          success: false,
+          message: 'Access denied. You can only delete your own records.'
+        });
+      }
+
+      const ONE_DAY_12_HOURS = 36 * 60 * 60 * 1000; // 36 hours in ms
+      const timeSinceUpload = Date.now() - new Date(record.createdAt).getTime();
+
+      if (timeSinceUpload > ONE_DAY_12_HOURS) {
+        return res.status(403).json({
+          success: false,
+          message: 'Rollback period expired. You can only delete records uploaded within the last 36 hours.'
+        });
+      }
+    }
+
+
+
+    await record.deleteOne();
+
     res.json({
       success: true,
       message: 'Record deleted successfully',
-      data: deletedRecord
+      data: record
     });
   } catch (error) {
     console.error('Error deleting record:', error);

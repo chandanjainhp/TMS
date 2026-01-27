@@ -225,10 +225,15 @@ const FormDataViewer = () => {
       year: record.year || csv.Year || 'N/A',
       branch: record.branch || csv.Branch || 'N/A',
       section: record.section || csv.Section || 'N/A',
-      totalMarks: csv['Total Marks'] || csv.totalMarks || '-',
+      totalMarks: csv['Total Marks'] || csv.totalMarks || csv['totalMarks'] || '-',
       attendance: csv.Attendance || csv.attendance || '-',
       c1: csv.C1 || csv.c1 || '-',
       c2: csv.C2 || csv.c2 || '-',
+      assignMarks: csv['Assign Marks'] || csv.assignMarks || csv['assignMarks'] || '-',
+      recordMarks: csv['Record Marks'] || csv.recordMarks || csv['recordMarks'] || '-',
+      c2Lab: csv['C2 Lab'] || csv.c2Lab || csv['c2Lab'] || '-',
+      c1Date: csv['C1 Date'] || csv.c1Date || csv['c1Date'] || '-',
+      c2Date: csv['C2 Date'] || csv.c2Date || csv['c2Date'] || '-',
       originalRecord: record,
       fullCsv: csv
     };
@@ -342,12 +347,19 @@ const FormDataViewer = () => {
               <table className="w-full text-sm text-left">
                 <thead className="bg-gray-50 text-gray-500 font-medium border-b border-gray-200">
                   <tr>
-                    <th className="px-4 py-3">Name / USN</th>
-                    <th className="px-4 py-3">Department</th>
-                    <th className="px-4 py-3">Year/Branch</th>
-                    <th className="px-4 py-3">Section</th>
-                    <th className="px-4 py-3 text-center">Marks</th>
-                    <th className="px-4 py-3 text-center">Actions</th>
+                    <th className="px-3 py-3 whitespace-nowrap">Name / USN</th>
+                    <th className="px-3 py-3 whitespace-nowrap">Dept</th>
+                    <th className="px-3 py-3 whitespace-nowrap">Year</th>
+                    <th className="px-3 py-3 whitespace-nowrap">Branch</th>
+                    <th className="px-3 py-3 whitespace-nowrap">Section</th>
+                    <th className="px-3 py-3 text-center whitespace-nowrap">C1</th>
+                    <th className="px-3 py-3 text-center whitespace-nowrap">C2</th>
+                    <th className="px-3 py-3 text-center whitespace-nowrap">Assign</th>
+                    <th className="px-3 py-3 text-center whitespace-nowrap">Record</th>
+                    <th className="px-3 py-3 text-center whitespace-nowrap">C2 Lab</th>
+                    <th className="px-3 py-3 text-center whitespace-nowrap">Attend %</th>
+                    <th className="px-3 py-3 text-center whitespace-nowrap">Total</th>
+                    <th className="px-3 py-3 text-center whitespace-nowrap">Actions</th>
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-gray-100">
@@ -361,45 +373,63 @@ const FormDataViewer = () => {
                         key={record._id}
                         className="hover:bg-gray-50/50 transition-colors group"
                       >
-                        <td className="px-4 py-3">
+                        <td className="px-3 py-2">
                           <div className="flex flex-col">
-                            <span className="font-semibold text-gray-900">{record.name}</span>
-                            <span className="text-xs text-gray-500 font-mono">{record.usn}</span>
+                            <span className="font-semibold text-gray-900 text-xs">{record.name}</span>
+                            <span className="text-[10px] text-gray-500 font-mono">{record.usn}</span>
                           </div>
                         </td>
-                        <td className="px-4 py-3 text-gray-600">{record.department}</td>
-                        <td className="px-4 py-3">
-                          <div className="text-gray-600">{record.year}</div>
-                          <div className="text-xs text-gray-400">{record.branch}</div>
+                        <td className="px-3 py-2 text-gray-600 text-xs">{record.department}</td>
+                        <td className="px-3 py-2 text-gray-600 text-xs">{record.year}</td>
+                        <td className="px-3 py-2 text-gray-600 text-xs">{record.branch}</td>
+                        <td className="px-3 py-2 text-gray-600 text-xs">{record.section}</td>
+                        <td className="px-3 py-2 text-center">
+                          <span className="text-xs font-medium text-gray-700">{record.c1 || '-'}</span>
                         </td>
-                        <td className="px-4 py-3 text-gray-600">{record.section}</td>
-                        <td className="px-4 py-3 text-center">
-                          <span className={`inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium ${record.totalMarks >= 35
+                        <td className="px-3 py-2 text-center">
+                          <span className="text-xs font-medium text-gray-700">{record.c2 || '-'}</span>
+                        </td>
+                        <td className="px-3 py-2 text-center">
+                          <span className="text-xs font-medium text-gray-700">{record.assignMarks || '-'}</span>
+                        </td>
+                        <td className="px-3 py-2 text-center">
+                          <span className="text-xs font-medium text-gray-700">{record.recordMarks || '-'}</span>
+                        </td>
+                        <td className="px-3 py-2 text-center">
+                          <span className="text-xs font-medium text-gray-700">{record.c2Lab || '-'}</span>
+                        </td>
+                        <td className="px-3 py-2 text-center">
+                          <span className={`text-xs font-medium ${Number(record.attendance) >= 75 ? 'text-emerald-600' : 'text-rose-600'}`}>
+                            {record.attendance || '-'}
+                          </span>
+                        </td>
+                        <td className="px-3 py-2 text-center">
+                          <span className={`inline-flex items-center px-2 py-0.5 rounded-full text-xs font-bold ${Number(record.totalMarks) >= 200
                             ? 'bg-emerald-100 text-emerald-800'
-                            : 'bg-rose-100 text-rose-800'
+                            : 'bg-amber-100 text-amber-800'
                             }`}>
                             {record.totalMarks}
                           </span>
                         </td>
-                        <td className="px-4 py-3">
-                          <div className="flex items-center justify-center gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
+                        <td className="px-3 py-2">
+                          <div className="flex items-center justify-center gap-1">
                             <button
                               onClick={() => startEditing(record)}
-                              className="p-1.5 rounded-lg text-gray-400 hover:text-emerald-600 hover:bg-emerald-50 transition-all"
+                              className="p-1 rounded text-gray-400 hover:text-emerald-600 hover:bg-emerald-50 transition-all"
                               title="Edit Record"
                             >
                               <Pencil className="w-3.5 h-3.5" />
                             </button>
                             <button
                               onClick={() => { setSelectedRecord(record); setShowDataModal(true); }}
-                              className="p-1.5 rounded-lg text-gray-400 hover:text-indigo-600 hover:bg-indigo-50 transition-all"
-                              title="View Details"
+                              className="p-1 rounded text-gray-400 hover:text-indigo-600 hover:bg-indigo-50 transition-all"
+                              title="View All Details"
                             >
                               <ScanEye className="w-3.5 h-3.5" />
                             </button>
                             <button
                               onClick={() => handleDeleteRecord(record._id)}
-                              className="p-1.5 rounded-lg text-gray-400 hover:text-rose-600 hover:bg-rose-50 transition-all"
+                              className="p-1 rounded text-gray-400 hover:text-rose-600 hover:bg-rose-50 transition-all"
                               title="Delete Record"
                             >
                               <Trash className="w-3.5 h-3.5" />

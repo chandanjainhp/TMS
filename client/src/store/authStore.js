@@ -10,36 +10,36 @@ axios.defaults.headers.common['Content-Type'] = 'application/json';
 
 // Add request interceptor for debugging - only in development
 if (import.meta.env.MODE !== 'production') {
-  axios.interceptors.request.use(request => {
-    console.log('Starting Request', {
-      url: request.url,
-      method: request.method,
-      withCredentials: request.withCredentials,
-      headers: request.headers
-    });
-    return request;
-  });
+	axios.interceptors.request.use(request => {
+		console.log('Starting Request', {
+			url: request.url,
+			method: request.method,
+			withCredentials: request.withCredentials,
+			headers: request.headers
+		});
+		return request;
+	});
 
-  // Add response interceptor for debugging
-  axios.interceptors.response.use(
-    response => {
-      console.log('Response:', {
-        status: response.status,
-        data: response.data
-      });
-      return response;
-    },
-    error => {
-      console.error('Response Error:', {
-        message: error.message,
-        response: error.response ? {
-          status: error.response.status,
-          data: error.response.data
-        } : 'No response'
-      });
-      return Promise.reject(error);
-    }
-  );
+	// Add response interceptor for debugging
+	axios.interceptors.response.use(
+		response => {
+			console.log('Response:', {
+				status: response.status,
+				data: response.data
+			});
+			return response;
+		},
+		error => {
+			console.error('Response Error:', {
+				message: error.message,
+				response: error.response ? {
+					status: error.response.status,
+					data: error.response.data
+				} : 'No response'
+			});
+			return Promise.reject(error);
+		}
+	);
 }
 
 export const useAuthStore = create((set, get) => ({
@@ -131,10 +131,10 @@ export const useAuthStore = create((set, get) => ({
 		set({ isLoading: true, error: null });
 		try {
 			console.log('Logging out...');
-			
+
 			// Clear session timeout
 			get().clearSessionTimeout();
-			
+
 			await axios.post(`${API_URL}/logout`, {}, { withCredentials: true });
 			console.log('Logout successful');
 			set({ user: null, isAuthenticated: false, error: null, isLoading: false });
@@ -166,9 +166,9 @@ export const useAuthStore = create((set, get) => ({
 			set({ isLoading: false, message: response.data.message });
 			return response.data;
 		} catch (error) {
-			set({ 
-				error: error.response?.data?.message || "Error resending verification email", 
-				isLoading: false 
+			set({
+				error: error.response?.data?.message || "Error resending verification email",
+				isLoading: false
 			});
 			throw error;
 		}
@@ -187,7 +187,7 @@ export const useAuthStore = create((set, get) => ({
 				isAuthenticated: true,
 				isCheckingAuth: false
 			});
-			
+
 			// Start session timeout if user is authenticated
 			if (response.data.user) {
 				get().startSessionTimeout();
@@ -261,24 +261,22 @@ export const useAuthStore = create((set, get) => ({
 		}
 	},
 
-	// Start session timeout - 30 minutes for regular users
+	// Start session timeout - 15 minutes for regular users
 	startSessionTimeout: () => {
 		const state = get();
-		
+
 		// Clear any existing timeout
 		if (state.sessionTimeout) {
 			clearTimeout(state.sessionTimeout);
 		}
 
-		// Set timeout for 30 minutes (1800000 milliseconds)
+		// Set timeout for 15 minutes (900000 milliseconds)
 		const timeout = setTimeout(() => {
 			console.log('Session timeout - logging out user');
 			get().logout();
 			// Show notification
-			if (typeof window !== 'undefined' && window.toast) {
-				window.toast.error('Your session has expired. Please login again.');
-			}
-		}, 30 * 60 * 1000); // 30 minutes
+			toast.error('Your session has expired. Please login again.');
+		}, 15 * 60 * 1000); // 15 minutes
 
 		set({ sessionTimeout: timeout, lastActivity: Date.now() });
 	},

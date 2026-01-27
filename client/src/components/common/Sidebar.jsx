@@ -1,5 +1,5 @@
 import { useState, useEffect } from "react";
-import {  People, Settings, Menu } from "@mui/icons-material";
+import { People, Settings, Menu } from "@mui/icons-material";
 import { AnimatePresence, motion } from "framer-motion";
 import { Link, useNavigate } from "react-router-dom";
 import { PenBoxIcon, Database, FileText } from "lucide-react";
@@ -93,17 +93,17 @@ const Sidebar = () => {
     : USER_SIDEBAR_ITEMS; // Regular users only see user items
 
   console.log('Sidebar items for user:', sidebarItemsToShow);
-  
+
   if (isMobile) {
     const mobileItemsLimit = 4;
     const priorityItems = sidebarItemsToShow.slice(0, mobileItemsLimit);
-    
+
     return (
       <>
         {/* Top user bar for mobile */}
         <div className="fixed top-0 left-0 right-0 z-50 bg-white border-b border-gray-200 p-4 shadow-sm">
           <div className="flex items-center justify-between">
-            <div className="text-xl font-bold text-indigo-600">TMS</div>
+            <img src="/logo.png" alt="TMS" className="h-8 w-auto" />
             <div className="relative">
               <button
                 onClick={() => setUserMenuOpen(!userMenuOpen)}
@@ -171,9 +171,8 @@ const Sidebar = () => {
 
   return (
     <motion.div
-      className={`relative z-30 transition-all duration-300 ease-in-out flex-shrink-0 ${
-        isSidebarOpen ? "w-64" : "w-20"
-      }`}
+      className={`relative z-30 transition-all duration-300 ease-in-out flex-shrink-0 ${isSidebarOpen ? "w-64" : "w-20"
+        }`}
       animate={{ width: isSidebarOpen ? 256 : 80 }}
     >
       <div className="h-full bg-white p-4 flex flex-col border-r border-gray-200 shadow-md">

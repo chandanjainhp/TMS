@@ -27,6 +27,7 @@ const DepartmentUploadForm = () => {
     year: '',
     semester: '',
     subject: '',
+    subSubject: '',
     teacherName: '',
     aiTestDate: '',
     testType: 'A1',
@@ -58,20 +59,41 @@ const DepartmentUploadForm = () => {
     'PMCS', 'BCA', 'PME', 'PCM'
   ];
 
-  const getSubjectsByBranch = (branch) => {
-    switch (branch) {
-      case 'PMCS':
-        return ['Physics', 'Mathematics', 'Computer Science', 'Electronics'];
-      case 'BCA':
-        return ['Programming in C', 'Web Development', 'Data Structures', 'Database Management', 'Networking'];
-      case 'PME':
-        return ['Physics', 'Mathematics', 'Electronics'];
-      case 'PCM':
-        return ['Physics', 'Chemistry', 'Mathematics'];
-      default:
-        return [];
-    }
-  };
+  // Dynamic Subjects State
+  const [subjectList, setSubjectList] = useState([]);
+  const [subSubjectOptions, setSubSubjectOptions] = useState([]);
+  const [loadingSubjects, setLoadingSubjects] = useState(false);
+
+  // Fetch subjects when Branch or Semester changes
+  useEffect(() => {
+    const fetchSubjects = async () => {
+      if (!formData.branch || !formData.semester) {
+        setSubjectList([]);
+        return;
+      }
+
+      setLoadingSubjects(true);
+      try {
+        const res = await axios.get(`http://localhost:5000/api/subjects?branch=${formData.branch}&semester=${formData.semester}`, { withCredentials: true });
+        if (res.data.success) {
+          // Store full subject objects
+          if (res.data.data.length === 0) {
+            setSubjectList([]);
+          } else {
+            setSubjectList(res.data.data);
+          }
+        }
+      } catch (error) {
+        console.error("Failed to fetch subjects", error);
+        // Fallback to empty
+        setSubjectList([]);
+      } finally {
+        setLoadingSubjects(false);
+      }
+    };
+
+    fetchSubjects();
+  }, [formData.branch, formData.semester]);
 
   const sections = Array.from({ length: 26 }, (_, i) => String.fromCharCode(65 + i));
 
@@ -118,6 +140,7 @@ const DepartmentUploadForm = () => {
     if (!formData.year) return setError('Please select a year');
     if (!formData.semester) return setError('Please select a semester');
     if (!formData.subject) return setError('Please select a subject');
+    if (!formData.subSubject) return setError('Please enter sub-subject');
     if (!formData.teacherName.trim()) return setError('Please enter teacher name');
     if (!/^[a-zA-Z\s.\-']+$/.test(formData.teacherName.trim())) return setError('Teacher name should only contain letters, spaces, dots, hyphens, or apostrophes');
     if (!formData.section) return setError('Please select a section');
@@ -164,7 +187,7 @@ const DepartmentUploadForm = () => {
       setFormData(prev => ({
         ...prev,
         csvFile: null,
-        department: '', branch: '', section: '', year: '', semester: '', subject: '', teacherName: user?.name || '', aiTestDate: '', testType: 'A1'
+        department: '', branch: '', section: '', year: '', semester: '', subject: '', subSubject: '', teacherName: user?.name || '', aiTestDate: '', testType: 'A1'
       }));
 
     } catch (err) {
@@ -210,8 +233,8 @@ const DepartmentUploadForm = () => {
 
         <form onSubmit={handleSubmit} className="space-y-8">
 
-          {/* Main Form Grid */}
-          <div className="grid grid-cols-1 md:grid-cols-3 lg:grid-cols-4 gap-x-6 gap-y-6">
+          {/* Main Form Grid - Row 1: Classification */}
+          <div className="grid grid-cols-1 md:grid-cols-4 gap-x-6 gap-y-6">
 
             <InputField label="Department" icon={Building2}>
               <select
@@ -237,30 +260,6 @@ const DepartmentUploadForm = () => {
               </select>
             </InputField>
 
-            <InputField label="Subject" icon={BookOpenCheck}>
-              <select
-                name="subject"
-                value={formData.subject || ''}
-                onChange={handleChange}
-                disabled={!formData.branch}
-                className="w-full px-4 py-3 bg-gray-50 border border-gray-200 rounded-xl focus:ring-2 focus:ring-indigo-500 focus:border-transparent transition-all outline-none appearance-none disabled:opacity-50 font-medium text-gray-700"
-              >
-                <option value="">Select Subject</option>
-                {getSubjectsByBranch(formData.branch).map(s => <option key={s} value={s}>{s}</option>)}
-              </select>
-            </InputField>
-
-            <InputField label="Teacher Name" icon={UserCircle2}>
-              <input
-                type="text"
-                name="teacherName"
-                placeholder="Dr. Smith"
-                value={formData.teacherName}
-                onChange={handleChange}
-                className="w-full px-4 py-3 bg-gray-50 border border-gray-200 rounded-xl focus:ring-2 focus:ring-indigo-500 focus:border-transparent transition-all outline-none font-medium text-gray-700"
-              />
-            </InputField>
-
             <InputField label="Year" icon={CalendarRange}>
               <select
                 name="year"
@@ -284,6 +283,62 @@ const DepartmentUploadForm = () => {
                 {[1, 2, 3, 4, 5, 6].map(s => <option key={s} value={s}>{s}</option>)}
               </select>
             </InputField>
+          </div>
+
+          {/* Row 2: Subject Selection (depends on Branch + Semester) */}
+          <div className="grid grid-cols-1 md:grid-cols-4 gap-x-6 gap-y-6 mt-6">
+            <InputField label="Subject" icon={BookOpenCheck}>
+              <select
+                name="subject"
+                value={formData.subject}
+                onChange={(e) => {
+                  const selectedSubjName = e.target.value;
+                  const selectedSubjObj = subjectList.find(s => s.name === selectedSubjName);
+                  setFormData(prev => ({
+                    ...prev,
+                    subject: selectedSubjName,
+                    subSubject: ''
+                  }));
+                  if (selectedSubjObj && selectedSubjObj.subSubjects && selectedSubjObj.subSubjects.length > 0) {
+                    setSubSubjectOptions(selectedSubjObj.subSubjects);
+                  } else {
+                    setSubSubjectOptions([]);
+                  }
+                }}
+                disabled={loadingSubjects || subjectList.length === 0}
+                className="w-full px-4 py-3 bg-gray-50 border border-gray-200 rounded-xl focus:ring-2 focus:ring-indigo-500 focus:border-transparent transition-all outline-none appearance-none font-medium text-gray-700 disabled:opacity-50 disabled:cursor-not-allowed"
+              >
+                <option value="">{loadingSubjects ? "Loading..." : (!formData.branch || !formData.semester ? "Select Branch & Semester first" : "Select Subject")}</option>
+                {subjectList.map((subj, index) => (
+                  <option key={index} value={subj.name}>{subj.name}</option>
+                ))}
+              </select>
+            </InputField>
+
+            <InputField label="Sub-Subject" icon={Scroll}>
+              {subSubjectOptions.length > 0 ? (
+                <select
+                  name="subSubject"
+                  value={formData.subSubject}
+                  onChange={handleChange}
+                  className="w-full px-4 py-3 bg-gray-50 border border-gray-200 rounded-xl focus:ring-2 focus:ring-indigo-500 focus:border-transparent transition-all outline-none appearance-none font-medium text-gray-700"
+                >
+                  <option value="">Select Sub-Subject</option>
+                  {subSubjectOptions.map((sub, index) => (
+                    <option key={index} value={sub}>{sub}</option>
+                  ))}
+                </select>
+              ) : (
+                <input
+                  type="text"
+                  name="subSubject"
+                  placeholder="Enter Sub-Subject"
+                  value={formData.subSubject || ''}
+                  onChange={handleChange}
+                  className="w-full px-4 py-3 bg-gray-50 border border-gray-200 rounded-xl focus:ring-2 focus:ring-indigo-500 focus:border-transparent transition-all outline-none font-medium text-gray-700"
+                />
+              )}
+            </InputField>
 
             <InputField label="Section" icon={Users2}>
               <select
@@ -295,6 +350,17 @@ const DepartmentUploadForm = () => {
                 <option value="">Section</option>
                 {sections.map(s => <option key={s} value={s}>{s}</option>)}
               </select>
+            </InputField>
+
+            <InputField label="Teacher Name" icon={UserCircle2}>
+              <input
+                type="text"
+                name="teacherName"
+                placeholder="Dr. Smith"
+                value={formData.teacherName}
+                onChange={handleChange}
+                className="w-full px-4 py-3 bg-gray-50 border border-gray-200 rounded-xl focus:ring-2 focus:ring-indigo-500 focus:border-transparent transition-all outline-none font-medium text-gray-700"
+              />
             </InputField>
 
             <div className="flex gap-4">
@@ -431,6 +497,8 @@ const DepartmentUploadForm = () => {
                 )}
               </button>
             </div>
+
+            {/* Subject File Upload Removed */}
           </div>
 
         </form>

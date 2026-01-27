@@ -12,12 +12,23 @@ import {
 } from "../email/emails.js";
 import { User } from "../models/user.model.js";
 
+import { AllowedEmail } from "../models/allowedEmail.model.js";
+
 export const signup = async (req, res) => {
 	const { email, password, name } = req.body;
 
 	try {
 		if (!email || !password || !name) {
 			throw new Error("All fields are required");
+		}
+
+		// Check if email is allowed
+		const isAllowed = await AllowedEmail.findOne({ email });
+		if (!isAllowed) {
+			return res.status(403).json({
+				success: false,
+				message: "You do not have permission to signup. Please contact Admin."
+			});
 		}
 
 		const userAlreadyExists = await User.findOne({ email });
@@ -36,6 +47,7 @@ export const signup = async (req, res) => {
 			name,
 			verificationToken,
 			verificationTokenExpiresAt: Date.now() + 24 * 60 * 60 * 1000, // 24 hours
+			role: "teacher" // Only allowed emails can signup, assuming they are teachers/users
 		});
 
 		await user.save();
@@ -154,40 +166,40 @@ export const login = async (req, res) => {
 	}
 };
 export const AdminLoginPage = async (req, res) => {
-    const { email, password } = req.body;
+	const { email, password } = req.body;
 
-    try {
-        // Check if the admin user exists in the database
-        const user = await User.findOne({ email, role: "admin" }); // Assuming "role" field specifies admin
-        if (!user) {
-            return res.status(400).json({ success: false, message: "Invalid admin credentials" });
-        }
+	try {
+		// Check if the admin user exists in the database
+		const user = await User.findOne({ email, role: "admin" }); // Assuming "role" field specifies admin
+		if (!user) {
+			return res.status(400).json({ success: false, message: "Invalid admin credentials" });
+		}
 
-        // Validate password
-        const isPasswordValid = await bcryptjs.compare(password, user.password);
-        if (!isPasswordValid) {
-            return res.status(400).json({ success: false, message: "Invalid admin credentials" });
-        }
+		// Validate password
+		const isPasswordValid = await bcryptjs.compare(password, user.password);
+		if (!isPasswordValid) {
+			return res.status(400).json({ success: false, message: "Invalid admin credentials" });
+		}
 
-        // Generate token and set it as a cookie
-        generateTokenAndSetCookie(res, user._id);
+		// Generate token and set it as a cookie
+		generateTokenAndSetCookie(res, user._id);
 
-        // Save last login date
-        user.lastLogin = new Date();
-        await user.save();
+		// Save last login date
+		user.lastLogin = new Date();
+		await user.save();
 
-        res.status(200).json({
-            success: true,
-            message: "Admin logged in successfully",
-            user: {
-                ...user._doc,
-                password: undefined,
-            },
-        });
-    } catch (error) {
-        console.log("Error in AdminLoginPage ", error);
-        res.status(400).json({ success: false, message: error.message });
-    }
+		res.status(200).json({
+			success: true,
+			message: "Admin logged in successfully",
+			user: {
+				...user._doc,
+				password: undefined,
+			},
+		});
+	} catch (error) {
+		console.log("Error in AdminLoginPage ", error);
+		res.status(400).json({ success: false, message: error.message });
+	}
 }
 export const logout = async (req, res) => {
 	res.clearCookie("token");
@@ -318,30 +330,30 @@ export const changePassword = async (req, res) => {
 export const adminForgotPassword = async (req, res) => {
 	const { email } = req.body;
 	const ADMIN_BACKUP_EMAIL = "backupid849@gmail.com";
-	
+
 	try {
 		// Check if email matches the admin backup email
 		if (email !== ADMIN_BACKUP_EMAIL) {
-			return res.status(403).json({ 
-				success: false, 
-				message: "Admin password reset is only available for authorized backup email (backupid849@gmail.com)" 
+			return res.status(403).json({
+				success: false,
+				message: "Admin password reset is only available for authorized backup email (backupid849@gmail.com)"
 			});
 		}
 
 		const user = await User.findOne({ email });
 
 		if (!user) {
-			return res.status(404).json({ 
-				success: false, 
-				message: "Admin user not found. Please run the setup script: node server/scripts/setupBackupAdmin.js" 
+			return res.status(404).json({
+				success: false,
+				message: "Admin user not found. Please run the setup script: node server/scripts/setupBackupAdmin.js"
 			});
 		}
 
 		// Ensure user has admin role
 		if (user.role !== 'admin') {
-			return res.status(403).json({ 
-				success: false, 
-				message: "This email is not registered as an admin. Please contact support." 
+			return res.status(403).json({
+				success: false,
+				message: "This email is not registered as an admin. Please contact support."
 			});
 		}
 
@@ -359,9 +371,9 @@ export const adminForgotPassword = async (req, res) => {
 
 		console.log(`✅ OTP sent to ${user.email}: ${resetOTP}`); // For testing
 
-		res.status(200).json({ 
-			success: true, 
-			message: "Password reset OTP sent to your email. Valid for 15 minutes." 
+		res.status(200).json({
+			success: true,
+			message: "Password reset OTP sent to your email. Valid for 15 minutes."
 		});
 	} catch (error) {
 		console.log("Error in adminForgotPassword ", error);
@@ -377,17 +389,17 @@ export const adminResetPasswordWithOTP = async (req, res) => {
 	try {
 		// Check if email matches the admin backup email
 		if (email !== ADMIN_BACKUP_EMAIL) {
-			return res.status(403).json({ 
-				success: false, 
-				message: "Admin password reset is only available for authorized backup email" 
+			return res.status(403).json({
+				success: false,
+				message: "Admin password reset is only available for authorized backup email"
 			});
 		}
 
 		// Validate inputs
 		if (!email || !otp || !newPassword) {
-			return res.status(400).json({ 
-				success: false, 
-				message: "Email, OTP, and new password are required" 
+			return res.status(400).json({
+				success: false,
+				message: "Email, OTP, and new password are required"
 			});
 		}
 
@@ -399,9 +411,9 @@ export const adminResetPasswordWithOTP = async (req, res) => {
 		});
 
 		if (!user) {
-			return res.status(400).json({ 
-				success: false, 
-				message: "Invalid or expired OTP" 
+			return res.status(400).json({
+				success: false,
+				message: "Invalid or expired OTP"
 			});
 		}
 
@@ -415,9 +427,9 @@ export const adminResetPasswordWithOTP = async (req, res) => {
 
 		await sendResetSuccessEmail(user.email);
 
-		res.status(200).json({ 
-			success: true, 
-			message: "Admin password reset successful" 
+		res.status(200).json({
+			success: true,
+			message: "Admin password reset successful"
 		});
 	} catch (error) {
 		console.log("Error in adminResetPasswordWithOTP ", error);
