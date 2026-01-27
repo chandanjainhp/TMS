@@ -1,6 +1,6 @@
 # TMS - Teacher Management System
 
-![TMS Logo](client/public/favicon.svg)
+
 
 A modern, full-stack web application for managing teachers, students, and educational records with role-based access control and comprehensive administrative features.
 
