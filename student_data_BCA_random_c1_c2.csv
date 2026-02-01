@@ -1,0 +1,26 @@
+slNo,name,usn,activity,c1,c1Date,assignMarks,c2,c2Date,attendance,recordMarks,c2Lab,totalMarks,department,year,branch
+1,Aarav Patel,1MS22CS001,Active,25,1/6/2023,78,38,15-06-2023,95,82,88,343,Bachelor of Computer Applications,2022,BCA
+2,Neha Gupta,1MS23EC002,Moderate,11,1/6/2023,85,35,15-06-2023,90,75,80,330,Bachelor of Computer Applications,2023,BCA
+3,Rohan Singh,1MS22ME003,Active,22,1/6/2023,72,35,15-06-2023,88,80,75,315,Bachelor of Computer Applications,2022,BCA
+4,Priya Sharma,1MS23CS004,Inactive,11,1/6/2023,65,32,15-06-2023,82,70,68,285,Bachelor of Computer Applications,2023,BCA
+5,Vikram Reddy,1MS22EC005,Moderate,24,1/6/2023,79,32,15-06-2023,91,84,83,337,Bachelor of Computer Applications,2022,BCA
+6,Ananya Das,1MS23ME006,Active,13,1/6/2023,88,27,15-06-2023,94,89,90,361,Bachelor of Computer Applications,2023,BCA
+7,Arjun Kumar,1MS22CS007,Moderate,18,1/6/2023,74,40,15-06-2023,85,78,80,317,Bachelor of Computer Applications,2022,BCA
+8,Sneha Verma,1MS23EC008,Inactive,17,1/6/2023,62,33,15-06-2023,75,68,70,275,Bachelor of Computer Applications,2023,BCA
+9,Rahul Mehta,1MS22ME009,Active,23,1/6/2023,81,32,15-06-2023,92,85,88,346,Bachelor of Computer Applications,2022,BCA
+10,Kriti Joshi,1MS23CS010,Active,12,1/6/2023,90,35,15-06-2023,96,92,94,372,Bachelor of Computer Applications,2023,BCA
+11,Aditya Rao,1MS22EC011,Moderate,19,1/6/2023,77,40,15-06-2023,87,80,82,326,Bachelor of Computer Applications,2022,BCA
+12,Pooja Yadav,1MS23ME012,Inactive,12,1/6/2023,68,35,15-06-2023,78,72,70,288,Bachelor of Computer Applications,2023,BCA
+13,Sanjay Mishra,1MS22CS013,Active,21,1/6/2023,84,34,15-06-2023,91,86,89,350,Bachelor of Computer Applications,2022,BCA
+14,Divya Choudhury,1MS23EC014,Moderate,12,1/6/2023,80,34,15-06-2023,88,82,85,335,Bachelor of Computer Applications,2023,BCA
+15,Amit Singhania,1MS22ME015,Active,12,1/6/2023,89,36,15-06-2023,95,90,92,366,Bachelor of Computer Applications,2022,BCA
+16,Shreya Nair,1MS23CS016,Inactive,22,1/6/2023,70,39,15-06-2023,80,75,72,297,Bachelor of Computer Applications,2023,BCA
+17,Rajesh Iyer,1MS22EC017,Active,18,1/6/2023,83,29,15-06-2023,90,85,88,346,Bachelor of Computer Applications,2022,BCA
+18,Nandini Desai,1MS23ME018,Moderate,13,1/6/2023,75,27,15-06-2023,85,80,78,318,Bachelor of Computer Applications,2023,BCA
+19,Vivek Malhotra,1MS22CS019,Active,23,1/6/2023,91,32,15-06-2023,96,93,95,375,Bachelor of Computer Applications,2022,BCA
+20,Anjali Srinivasan,1MS23EC020,Inactive,18,1/6/2023,66,29,15-06-2023,78,70,72,286,Bachelor of Computer Applications,2023,BCA
+21,Suresh Menon,1MS22ME021,Active,14,1/6/2023,87,35,15-06-2023,93,88,90,358,Bachelor of Computer Applications,2022,BCA
+22,Tanvi Kapoor,1MS23CS022,Moderate,24,1/6/2023,79,34,15-06-2023,86,80,82,327,Bachelor of Computer Applications,2023,BCA
+23,Karan Bhat,1MS22EC023,Active,21,1/6/2023,88,36,15-06-2023,94,89,91,362,Bachelor of Computer Applications,2022,BCA
+24,Meera Rajan,1MS23ME024,Inactive,12,1/6/2023,63,31,15-06-2023,72,68,65,268,Bachelor of Computer Applications,2023,BCA
+25,Ravi Shastri,1MS22CS025,Active,18,1/6/2023,85,26,15-06-2023,92,87,90,354,Bachelor of Computer Applications,2022,BCA

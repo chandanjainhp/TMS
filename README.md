@@ -158,6 +158,7 @@ TMS/
 │   └── package.json
 │
 ├── student_data.csv         # Sample CSV data
+├── docker-compose.yaml      # Docker Compose configuration
 ├── .gitignore
 ├── package.json
 └── README.md
@@ -167,14 +168,28 @@ TMS/
 
 ## 🔧 Installation & Setup
 
+### 1. Using Docker (Recommended)
+
+1. Ensure Docker and Docker Compose are installed.
+2. Run the application:
+   ```bash
+   docker-compose up --build
+   ```
+3. Access the application:
+   - Frontend: `http://localhost:5173`
+   - Backend: `http://localhost:5000`
+   - MongoDB: `mongodb://localhost:27017`
+
+### 2. Manual Installation
+
 ### Prerequisites
-- **Node.js** (v18 or higher)
+- **Node.js** (v18 or higher) or **Bun**
 - **MongoDB** (local or MongoDB Atlas)
-- **npm** or **yarn**
+- **npm**, **yarn**, or **bun**
 
 ### 1. Clone the Repository
 ```bash
-git clone https://github.com/yourusername/TMS.git
+git clone https://github.com/your-username/TMS.git
 cd TMS
 ```
 
@@ -185,13 +200,15 @@ cd TMS
 cd server
 
 # Install dependencies
+bun install
+# or
 npm install
 
 # Create .env file
 cp .env.example .env
 
 # Edit .env file with your configuration
-nano .env
+# For Docker, this is handled automatically
 ```
 
 **Required Environment Variables:**
@@ -225,9 +242,13 @@ SMTP_SECURE=true
 cd ../client
 
 # Install dependencies
+bun install
+# or
 npm install
 
 # Start development server
+bun run dev
+# or
 npm run dev
 ```
 
@@ -236,13 +257,13 @@ npm run dev
 **Terminal 1 - Backend:**
 ```bash
 cd server
-npm run dev
+bun run dev
 ```
 
 **Terminal 2 - Frontend:**
 ```bash
 cd client
-npm run dev
+bun run dev
 ```
 
 ### 5. Create Admin Account

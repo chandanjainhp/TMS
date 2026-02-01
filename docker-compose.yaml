@@ -1,0 +1,51 @@
+version: '3.8'
+
+services:
+  # MongoDB Service
+  mongo:
+    image: mongo:latest
+    container_name: tms_mongo
+    ports:
+      - "27017:27017"
+    volumes:
+      - mongo-data:/data/db
+    networks:
+      - tms-network
+
+  # Backend Service
+  server:
+    build: ./server
+    container_name: tms_server
+    ports:
+      - "5000:5000"
+    environment:
+      - PORT=5000
+      - MONGODB_URI=mongodb://mongo:27017/TMS
+      - JWT_SECRET=dev_secret_key_change_in_prod
+      - FRONTEND_URL=http://localhost:5173
+      - NODE_ENV=development
+    depends_on:
+      - mongo
+    networks:
+      - tms-network
+
+  # Frontend Service
+  client:
+    build: ./client
+    container_name: tms_client
+    ports:
+      - "5173:5173"
+    environment:
+      - VITE_API_URL=http://server:5000
+    depends_on:
+      - server
+    networks:
+      - tms-network
+
+volumes:
+  mongo-data:
+
+
+networks:
+  tms-network:
+    driver: bridge
