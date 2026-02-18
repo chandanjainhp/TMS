@@ -111,7 +111,7 @@ const RecordsList = () => {
           )}
           <div>
             <h2 className="text-2xl font-bold text-gray-800">
-              {currentView === 'folders' ? 'Student Records' : selectedDepartment}
+              {currentView === 'folders' ? 'Academic Ledger' : selectedDepartment}
             </h2>
             <p className="text-sm text-gray-500">
               {currentView === 'folders'

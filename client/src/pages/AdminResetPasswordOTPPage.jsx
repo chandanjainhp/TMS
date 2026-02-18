@@ -4,6 +4,8 @@ import { Lock, ArrowLeft, KeyRound, Eye, EyeOff } from "lucide-react";
 import { Link, useNavigate } from "react-router-dom";
 import toast from "react-hot-toast";
 
+export default AdminResetPasswordOTPPage;
+
 const AdminResetPasswordOTPPage = () => {
     const [email, setEmail] = useState("backupid849@gmail.com");
     const [otp, setOtp] = useState("");
@@ -48,10 +50,10 @@ const AdminResetPasswordOTPPage = () => {
                 headers: {
                     'Content-Type': 'application/json',
                 },
-                body: JSON.stringify({ 
-                    email, 
-                    otp, 
-                    newPassword 
+                body: JSON.stringify({
+                    email,
+                    otp,
+                    newPassword
                 }),
             });
 
@@ -83,13 +85,13 @@ const AdminResetPasswordOTPPage = () => {
             >
                 <div className='p-8'>
                     <div className='flex flex-col items-center mb-6'>
-                        <div className='w-16 h-16 bg-gradient-to-br from-indigo-600 via-purple-600 to-pink-600 rounded-full flex items-center justify-center mb-3'>
-                            <KeyRound className='w-8 h-8 text-white' />
+                        <div className='w-16 h-16 bg-red-100 rounded-full flex items-center justify-center mb-4'>
+                            <KeyRound className='w-8 h-8 text-red-600' />
                         </div>
-                        <h2 className='text-3xl font-bold text-center bg-gradient-to-r from-indigo-600 via-purple-600 to-pink-600 bg-clip-text text-transparent'>
+                        <h2 className='text-3xl font-bold text-center text-gray-900'>
                             Verify OTP
                         </h2>
-                        <p className='text-sm text-gray-500 mt-2 text-center'>
+                        <p className='text-sm text-gray-600 mt-2 text-center'>
                             Enter the OTP sent to your email and create a new password
                         </p>
                     </div>
@@ -103,7 +105,7 @@ const AdminResetPasswordOTPPage = () => {
                                 type='email'
                                 value={email}
                                 onChange={(e) => setEmail(e.target.value)}
-                                className='w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-transparent bg-gray-50'
+                                className='w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-transparent bg-gray-50'
                                 required
                                 readOnly
                             />
@@ -119,7 +121,7 @@ const AdminResetPasswordOTPPage = () => {
                                 onChange={(e) => setOtp(e.target.value.replace(/\D/g, '').slice(0, 6))}
                                 placeholder='Enter 6-digit OTP'
                                 maxLength={6}
-                                className='w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-transparent text-center text-2xl tracking-widest font-bold'
+                                className='w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-transparent text-center text-2xl tracking-widest font-bold text-gray-800'
                                 required
                             />
                             <p className='text-xs text-gray-500 mt-2 text-center'>
@@ -137,14 +139,15 @@ const AdminResetPasswordOTPPage = () => {
                                     value={newPassword}
                                     onChange={(e) => setNewPassword(e.target.value)}
                                     placeholder='Enter new password'
-                                    className='w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-transparent pr-12'
+                                    className='w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-transparent pr-12'
                                     required
                                     minLength={8}
                                 />
                                 <button
                                     type='button'
                                     onClick={() => setShowPassword(!showPassword)}
-                                    className='absolute right-3 top-1/2 -translate-y-1/2 text-gray-500 hover:text-gray-700'
+                                    className='absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600'
+                                    tabIndex={-1}
                                 >
                                     {showPassword ? <EyeOff className='w-5 h-5' /> : <Eye className='w-5 h-5' />}
                                 </button>
@@ -161,14 +164,15 @@ const AdminResetPasswordOTPPage = () => {
                                     value={confirmPassword}
                                     onChange={(e) => setConfirmPassword(e.target.value)}
                                     placeholder='Confirm new password'
-                                    className='w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-transparent pr-12'
+                                    className='w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-transparent pr-12'
                                     required
                                     minLength={8}
                                 />
                                 <button
                                     type='button'
                                     onClick={() => setShowConfirmPassword(!showConfirmPassword)}
-                                    className='absolute right-3 top-1/2 -translate-y-1/2 text-gray-500 hover:text-gray-700'
+                                    className='absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600'
+                                    tabIndex={-1}
                                 >
                                     {showConfirmPassword ? <EyeOff className='w-5 h-5' /> : <Eye className='w-5 h-5' />}
                                 </button>
@@ -178,17 +182,17 @@ const AdminResetPasswordOTPPage = () => {
                             </p>
                         </div>
 
-                        <div className='bg-yellow-50 border border-yellow-200 rounded-lg p-3 flex items-start gap-2'>
-                            <div className='text-yellow-600 mt-0.5'>⚠️</div>
-                            <p className='text-xs text-yellow-800'>
+                        <div className='bg-amber-50 border border-amber-100 rounded-lg p-3 flex items-start gap-2'>
+                            <div className='text-amber-600 mt-0.5'>⚠️</div>
+                            <p className='text-xs text-amber-800'>
                                 Make sure to use a strong password with uppercase, lowercase, numbers, and special characters
                             </p>
                         </div>
 
                         <motion.button
-                            whileHover={{ scale: 1.02 }}
-                            whileTap={{ scale: 0.98 }}
-                            className='w-full py-3 px-4 bg-gradient-to-r from-indigo-600 via-purple-600 to-pink-600 text-white font-bold rounded-lg shadow-lg hover:shadow-xl focus:outline-none focus:ring-2 focus:ring-purple-500 focus:ring-offset-2 transition duration-200'
+                            whileHover={{ scale: 1.01 }}
+                            whileTap={{ scale: 0.99 }}
+                            className='w-full py-3 px-4 bg-indigo-600 text-white font-bold rounded-xl shadow-lg hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:ring-offset-2 transition duration-200'
                             type='submit'
                             disabled={isLoading}
                         >
@@ -207,7 +211,7 @@ const AdminResetPasswordOTPPage = () => {
                     </form>
                 </div>
 
-                <div className='px-8 py-4 bg-gradient-to-r from-indigo-50 via-purple-50 to-pink-50 flex justify-between items-center'>
+                <div className='px-8 py-4 bg-gray-50 flex justify-between items-center border-t border-gray-100'>
                     <Link
                         to='/admin/forgot-password'
                         className='flex items-center gap-2 text-sm text-gray-600 hover:text-indigo-600 transition-colors'
@@ -226,5 +230,3 @@ const AdminResetPasswordOTPPage = () => {
         </div>
     );
 };
-
-export default AdminResetPasswordOTPPage;

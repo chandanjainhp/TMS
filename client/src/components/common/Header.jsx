@@ -6,18 +6,18 @@ import { useAuthStore } from "../../store/authStore";
 import { useAdminAuthStore } from "../../store/adminAuthStore";
 
 const USER_MENU_ITEMS = [
-  { name: "Upload", icon: Upload, path: "/from" },
-  { name: "Form Data", icon: ClipboardList, path: "/form-data" },
+  { name: "Score Entry", icon: Upload, path: "/score-entry" },
+  { name: "Academic Ledger", icon: Book, path: "/academic-ledger" },
+  { name: "Submission History", icon: ClipboardList, path: "/submission-history" },
   { name: "Messages", icon: MessageSquare, path: "/messages", hasNotification: true },
-  { name: "Uploaded Batches", icon: ClipboardList, path: "/records" },
   { name: "Calendar", icon: CalendarIcon, path: "#", comingSoon: true },
   { name: "Settings", icon: Settings, path: "/settings" },
 ];
 
 const ADMIN_MENU_ITEMS = [
   { name: 'Dashboard', path: '/admin', icon: LayoutDashboard },
-  { name: 'Student Records', path: '/admin/records', icon: FileText },
-  { name: 'Manage Subjects', path: '/admin/subjects', icon: Book },
+  { name: 'Academic Ledger', path: '/admin/records', icon: FileText },
+  { name: 'Curriculum Manager', path: '/admin/subjects', icon: Book },
   { name: 'Teacher Log', path: '/admin/teacher-log', icon: ShieldCheck },
   { name: 'Messages', path: '/admin/messages', icon: MessageSquare, hasNotification: true },
   { name: 'Analytics', path: '/admin/analytics', icon: BarChart2 },

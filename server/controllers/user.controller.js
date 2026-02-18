@@ -4,7 +4,9 @@ import { User } from "../models/user.model.js";
 export const getAllUsers = async (req, res) => {
   try {
     // Check if the requesting user is an admin
-    const requestingUser = await User.findById(req.userId);
+    // Use req.user if available (from verifyToken/isAdmin), otherwise fetch
+    const requestingUser = req.user || await User.findById(req.userId);
+
     if (!requestingUser || requestingUser.role !== 'admin') {
       return res.status(403).json({
         success: false,
@@ -25,6 +27,11 @@ export const getAllUsers = async (req, res) => {
       if (endDate) {
         query.createdAt.$lte = new Date(endDate);
       }
+    }
+
+    // HOD Scope Restriction
+    if (requestingUser.department && requestingUser.department !== 'Global') {
+      query.department = requestingUser.department;
     }
 
     // Find all users, exclude sensitive fields
@@ -93,7 +100,7 @@ export const getUserById = async (req, res) => {
 export const getUserStats = async (req, res) => {
   try {
     // Check if the requesting user is an admin
-    const requestingUser = await User.findById(req.userId);
+    const requestingUser = req.user || await User.findById(req.userId);
     if (!requestingUser || requestingUser.role !== 'admin') {
       return res.status(403).json({
         success: false,
@@ -101,21 +108,27 @@ export const getUserStats = async (req, res) => {
       });
     }
 
+    // HOD Filter
+    const filter = {};
+    if (requestingUser.department && requestingUser.department !== 'Global') {
+      filter.department = requestingUser.department;
+    }
+
     // Get total user count
-    const totalUsers = await User.countDocuments();
+    const totalUsers = await User.countDocuments(filter);
 
     // Get verified users count
-    const verifiedUsers = await User.countDocuments({ isVerified: true });
+    const verifiedUsers = await User.countDocuments({ ...filter, isVerified: true });
 
     // Get users registered in the last 30 days
     const thirtyDaysAgo = new Date();
     thirtyDaysAgo.setDate(thirtyDaysAgo.getDate() - 30);
-    const newUsers = await User.countDocuments({ createdAt: { $gte: thirtyDaysAgo } });
+    const newUsers = await User.countDocuments({ ...filter, createdAt: { $gte: thirtyDaysAgo } });
 
     // Get users who logged in in the last 7 days
     const sevenDaysAgo = new Date();
     sevenDaysAgo.setDate(sevenDaysAgo.getDate() - 7);
-    const activeUsers = await User.countDocuments({ lastLogin: { $gte: sevenDaysAgo } });
+    const activeUsers = await User.countDocuments({ ...filter, lastLogin: { $gte: sevenDaysAgo } });
 
     res.status(200).json({
       success: true,

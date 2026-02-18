@@ -2,8 +2,11 @@ import { motion } from 'framer-motion';
 import { useAuthStore } from '../../store/authStore';
 import { formatDate } from "../../utils/date";
 
-const TeacherProfileDisplay = () => {
-  const { user } = useAuthStore();
+const TeacherProfileDisplay = ({ user: propUser }) => {
+  const { user: storeUser } = useAuthStore();
+  const user = propUser || storeUser;
+
+  if (!user) return null;
 
   return (
     <div className="w-full">

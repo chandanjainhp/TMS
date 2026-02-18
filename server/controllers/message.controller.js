@@ -97,12 +97,34 @@ export const markAsRead = async (req, res) => {
         const userId = req.userId;
 
         const message = await Message.findOneAndUpdate(
-            { _id: messageId, recipientId: userId },
-            { isRead: true },
+            { _id: messageId, recipientId: userId, status: { $ne: 'read' } },
+            {
+                isRead: true,
+                status: 'read',
+                readAt: new Date()
+            },
             { new: true }
         );
 
+        if (message) {
+            // Socket IO - Notify sender that message was read
+            try {
+                const { getReceiverSocketId, io } = await import("../socket/socket.js");
+                const senderSocketId = getReceiverSocketId(message.senderId);
+                if (senderSocketId) {
+                    io.to(senderSocketId).emit("messageRead", message);
+                }
+            } catch (socketError) {
+                console.error("Socket error (read receipt):", socketError);
+            }
+        }
+
         if (!message) {
+            // If already read, just return success (idempotent) or 404 if not found
+            // Check if it exists at all
+            const existing = await Message.findOne({ _id: messageId, recipientId: userId });
+            if (existing) return res.status(200).json({ success: true, data: existing });
+
             return res.status(404).json({ success: false, message: "Message not found or unauthorized" });
         }
 

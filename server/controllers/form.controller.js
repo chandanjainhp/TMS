@@ -2,11 +2,12 @@ import csv from 'csv-parser';
 import fs from 'fs';
 import path from 'path';
 import mongoose from 'mongoose';
-import Record from '../models/form.models.js';
+import Record from '../models/form.model.js';
+import { Student } from '../models/student.model.js'; // Import Student model
 
 export const uploadRecords = async (req, res) => {
   try {
-    const { department, branch, section, year, semester, subject, subSubject, teacherName, aiTestDate } = req.body;
+    const { department, branch, section, year, semester, subject, subSubject, teacherName, aiTestDate, testType } = req.body;
 
     // Handle multiple files
     const files = req.files || {};
@@ -14,10 +15,10 @@ export const uploadRecords = async (req, res) => {
     const subjectFile = files['subjectFile'] ? files['subjectFile'][0] : null;
 
     // Validation
-    if (!department || !branch || !section || !year || !semester || !subject || !subSubject || !teacherName || !aiTestDate) {
+    if (!department || !branch || !section || !year || !semester || !subject || !subSubject || !teacherName || !aiTestDate || !testType) {
       return res.status(400).json({
         success: false,
-        message: 'All fields are required: department, branch, section, year, semester, subject, subSubject, teacherName, aiTestDate',
+        message: 'All fields are required including testType',
       });
     }
 
@@ -39,7 +40,7 @@ export const uploadRecords = async (req, res) => {
       .on('data', (data) => results.push(data))
       .on('end', async () => {
         try {
-          // Create records with all form fields and CSV data
+          // 1. Create Audit Records (History)
           const recordsToInsert = results.map(row => ({
             department,
             branch,
@@ -50,28 +51,74 @@ export const uploadRecords = async (req, res) => {
             subSubject,
             teacherName,
             aiTestDate,
-            aiTestDate,
+            testType, // Store test type
             subjectFile: subjectFile ? subjectFile.path : null,
             subjectFileName: subjectFile ? subjectFile.originalname : null,
             csvData: row,
-            uploadBatchId, // Assign the batch ID
+            uploadBatchId,
           }));
 
-          // Save to database
           const savedRecords = await Record.insertMany(recordsToInsert);
+
+          // 2. Sync with Student Master (Current State)
+          // We iterate through results and upsert students
+          const bulkOps = results.map(row => {
+            // Normalize USN keys
+            const usn = row['USN'] || row['usn'] || row['Usn'];
+            const name = row['Student Name'] || row['Name'] || row['name'] || "Unknown";
+
+            // Find marks column
+            // We look for 'Marks', 'Score', 'Total Marks', or matches to testType
+            let marksObtained = 0;
+            const markKeys = Object.keys(row).filter(k =>
+              ['marks', 'score', 'total marks', testType.toLowerCase()].includes(k.toLowerCase())
+            );
+
+            if (markKeys.length > 0) {
+              marksObtained = parseFloat(row[markKeys[0]]) || 0;
+            }
+
+            if (!usn) return null; // Skip invalid rows
+
+            return {
+              updateOne: {
+                filter: { usn: new RegExp(`^${usn}$`, "i") }, // Case-insensitive match
+                update: {
+                  $set: {
+                    name,
+                    department,
+                    branch,
+                    section,
+                    year,
+                    semester,
+                    // Use array filters or specific path to update the map
+                    [`marks.${testType}`]: marksObtained,
+                    lastUpdatedBy: teacherName
+                  },
+                  $setOnInsert: {
+                    lockStatus: 'Draft'
+                  }
+                },
+                upsert: true
+              }
+            };
+          }).filter(op => op !== null);
+
+          if (bulkOps.length > 0) {
+            await Student.bulkWrite(bulkOps);
+          }
 
           res.json({
             success: true,
-            message: 'Records uploaded and saved to database successfully',
+            message: 'Records uploaded and synced successfully',
             data: {
               recordCount: savedRecords.length,
+              studentUpdatedCount: bulkOps.length,
               department,
               section,
               year,
               teacherName,
-              aiTestDate,
-              file: csvFile.originalname,
-              subjectFile: subjectFile ? subjectFile.originalname : null,
+              testType,
               batchId: uploadBatchId
             }
           });
@@ -107,7 +154,20 @@ export const getUploadBatches = async (req, res) => {
     }
 
     // Aggregate records by uploadBatchId
+    const User = (await import('../models/user.model.js')).User;
+    const user = await User.findById(req.userId);
+
+    let matchQuery = {};
+    if (user) {
+      if (user.role === 'instructor' || user.role === 'teacher') {
+        matchQuery.teacherName = user.name;
+      } else if (user.role === 'admin' && user.department && user.department !== 'Global') {
+        matchQuery.department = user.department;
+      }
+    }
+
     const batches = await Record.aggregate([
+      { $match: matchQuery },
       {
         $group: {
           _id: "$uploadBatchId",
@@ -170,14 +230,17 @@ export const getRecords = async (req, res) => {
     if (batchId) query.uploadBatchId = batchId; // Add batchId filter
 
     // Role-based Access Control
-    // Default: Restrict to own uploads if not admin
-    // If 'publicView' is true, allow viewing all records (for Student Records / Repository view)
     const isPublicView = req.query.publicView === 'true';
 
-    if (user.role !== 'admin' && !isPublicView) {
-      // Strict management mode: only see own records
+    // If basic instructor (instructor/teacher), only see own records
+    if ((user.role === 'instructor' || user.role === 'teacher') && !isPublicView) {
       query.teacherName = user.name;
     }
+    // If HOD (admin with department), see only department records
+    else if (user.role === 'admin' && user.department && user.department !== 'Global') {
+      query.department = user.department;
+    }
+    // If Admin/SuperAdmin (Global), see all.
 
     // Add search functionality
     if (search) {

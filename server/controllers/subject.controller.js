@@ -5,10 +5,15 @@ export const getSubjects = async (req, res) => {
     try {
         const { branch, semester } = req.query;
 
-        // Build filter - now supports optional filters
+        // Build filter
         const filter = {};
         if (branch) filter.branch = branch;
         if (semester) filter.semester = Number(semester);
+
+        // HOD Restriction: If has department, force branch filter
+        if (req.user && req.user.department && req.user.department !== 'Global') {
+            filter.branch = req.user.department;
+        }
 
         const subjects = await Subject.find(filter).sort({ branch: 1, semester: 1, name: 1 });
 
@@ -29,6 +34,13 @@ export const createSubject = async (req, res) => {
 
         if (!name || !branch || !semester) {
             return res.status(400).json({ success: false, message: "Name, branch, and semester are required" });
+        }
+
+        // HOD Restriction: Can only add to own department
+        if (req.user && req.user.department && req.user.department !== 'Global') {
+            if (branch !== req.user.department) {
+                return res.status(403).json({ success: false, message: `You can only add subjects for ${req.user.department}` });
+            }
         }
 
         // Check if subject already exists
@@ -63,11 +75,19 @@ export const deleteSubject = async (req, res) => {
     try {
         const { id } = req.params;
 
-        const subject = await Subject.findByIdAndDelete(id);
-
+        const subject = await Subject.findById(id);
         if (!subject) {
             return res.status(404).json({ success: false, message: "Subject not found" });
         }
+
+        // HOD Restriction: Can only delete own department subjects
+        if (req.user && req.user.department && req.user.department !== 'Global') {
+            if (subject.branch !== req.user.department) {
+                return res.status(403).json({ success: false, message: "You can only delete subjects from your department" });
+            }
+        }
+
+        await Subject.findByIdAndDelete(id);
 
         res.status(200).json({
             success: true,

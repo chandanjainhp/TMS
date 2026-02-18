@@ -1,23 +1,35 @@
 import mongoose from 'mongoose';
 
 const StudentSchema = new mongoose.Schema({
-  slNo: { type: Number, required: true },
+  // Identity
+  usn: { type: String, required: true, unique: true, index: true },
   name: { type: String, required: true },
-  usn: { type: String, required: true, unique: true },
-  activity: { type: String, required: true },
-  c1: { type: Number, required: true },
-  c1Date: { type: String, required: true },
-  assignMarks: { type: Number, required: true },
-  c2: { type: Number, required: true },
-  c2Date: { type: String, required: true },
-  attendance: { type: String, required: true },
-  recordMarks: { type: Number, required: true },
-  c2Lab: { type: String, required: true },
-  totalMarks: { type: String, required: true },
-  department: { type: String, required: true },
-  year: { type: String, required: true },
-  branch: { type: String, required: true }
-});
+
+  // Scope
+  department: { type: String, required: true, index: true },
+  branch: { type: String, required: true },
+  semester: { type: String, required: true }, // Current semester
+  section: { type: String, required: true },
+  year: { type: String, required: true }, // e.g., "1", "2", "3", "4"
+
+  // Dynamic Marks Storage
+  // Structure: { "A1": 18, "A2": 20, "Activity": 10, ... }
+  marks: {
+    type: Map,
+    of: Number,
+    default: {}
+  },
+
+  // Status
+  lockStatus: {
+    type: String,
+    enum: ['Draft', 'Final'],
+    default: 'Draft'
+  },
+
+  // Audit (Optional but good)
+  lastUpdatedBy: { type: String }, // Teacher Name
+}, { timestamps: true });
 
 const Student = mongoose.model('Student', StudentSchema);
-export { Student };  
+export { Student };

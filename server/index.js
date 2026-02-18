@@ -1,4 +1,5 @@
 // Express server and middleware imports
+import "./polyfill.js"; // Must be first to fix Buffer compatibility
 import dotenv from "dotenv"; // Loads environment variables from a .env file into process.env
 import cors from "cors"; // Middleware to enable Cross-Origin Resource Sharing
 import cookieParser from "cookie-parser"; // Middleware to parse cookies from requests
@@ -13,13 +14,13 @@ import { app, server } from "./socket/socket.js";
 
 // Route modules: each exports an Express router handling related endpoints
 import authRoutes from "./routes/auth.route.js"; // /api/auth
-import adminAuthRoutes from "./routes/admin.auth.route.js"; // /api/admin/auth
-import studentRoutes from "./routes/studentRoutes.js"; // /api/students
-import EditingStudentRoutes from "./routes/EditingStudentRoutes.js"; // /api/EditingStudent
-import fromRoutes from "./routes/formRoutes.js"; // /api/form
-import userActivityRoutes from "./routes/userActivity.routes.js"; // /api/user-activity
-import userRoutes from "./routes/user.routes.js"; // /api/users
-import allowedEmailRoutes from "./routes/allowedEmail.routes.js"; // /api/allowed-emails
+import adminAuthRoutes from "./routes/adminAuth.route.js"; // /api/admin/auth
+import studentRoutes from "./routes/student.route.js"; // /api/students
+import EditingStudentRoutes from "./routes/editingStudent.route.js"; // /api/EditingStudent
+import fromRoutes from "./routes/form.route.js"; // /api/form
+import userActivityRoutes from "./routes/userActivity.route.js"; // /api/user-activity
+import userRoutes from "./routes/user.route.js"; // /api/users
+import allowedEmailRoutes from "./routes/allowedEmail.route.js"; // /api/allowed-emails
 import analyticsRoutes from "./routes/analytics.route.js"; // /api/analytics
 import teacherRoutes from "./routes/teacher.route.js"; // /api/teacher
 import eventRoutes from "./routes/event.route.js"; // /api/events
@@ -159,6 +160,12 @@ if (process.env.NODE_ENV !== "production") {
   console.log("Registering route: /api/branches");
 }
 app.use("/api/branches", branchRoutes);
+
+import principalRoutes from "./routes/principal.route.js";
+if (process.env.NODE_ENV !== "production") {
+  console.log("Registering route: /api/principal");
+}
+app.use("/api/principal", principalRoutes);
 
 // Diagnostic endpoint that reports which routes were registered and DB status
 app.get("/api/routes-status", (req, res) => {

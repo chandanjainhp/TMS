@@ -1,6 +1,6 @@
 import { useState } from "react";
 import { Link } from "react-router-dom";
-import { Upload, FileText, MessageSquare, Menu, X, LogOut, Settings, ClipboardList } from "lucide-react";
+import { Upload, FileText, MessageSquare, Menu, X, LogOut, Settings, ClipboardList, Book } from "lucide-react";
 import MessagingSystem from "../components/common/MessagingSystem";
 import { useAuthStore } from "../store/authStore";
 
@@ -10,10 +10,11 @@ const TeacherDashboardPage = () => {
     const [sidebarOpen, setSidebarOpen] = useState(false);
 
     const quickActions = [
-        { id: "upload", label: "Upload Records", icon: Upload, link: "/from", color: "bg-indigo-600" },
+        { id: "score-entry", label: "Score Entry", icon: Upload, link: "/score-entry", color: "bg-indigo-600" },
+        { id: "academic-ledger", label: "Academic Ledger", icon: Book, link: "/academic-ledger", color: "bg-violet-600" },
         { id: "records", label: "View Batches", icon: ClipboardList, link: "/records", color: "bg-emerald-600" },
         { id: "messages", label: "Messages", icon: MessageSquare, action: () => setActiveTab("messages"), color: "bg-blue-600" },
-        { id: "formdata", label: "Form Data", icon: FileText, link: "/form-data", color: "bg-orange-600" },
+        { id: "submission-history", label: "Submission History", icon: FileText, link: "/submission-history", color: "bg-orange-600" },
     ];
 
     const sidebarItems = [

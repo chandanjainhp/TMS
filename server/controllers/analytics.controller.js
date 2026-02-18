@@ -1,10 +1,10 @@
-import Record from '../models/form.models.js';
+import Record from '../models/form.model.js';
 import { User } from '../models/user.model.js';
 
 // Get Class Performance Analytics (Admin)
 export const getClassPerformance = async (req, res) => {
     try {
-        const { department, year, section, subject } = req.query;
+        const { department, year, section, subject, testType } = req.query;
 
         console.log("Analytics Request Query:", req.query);
 
@@ -13,6 +13,7 @@ export const getClassPerformance = async (req, res) => {
         if (year) matchStage.year = year;
         if (section) matchStage.section = section;
         if (subject) matchStage.subject = subject;
+        if (testType) matchStage.testType = testType;
 
         // Helper to get total marks field with fallbacks
         const totalMarksField = {
@@ -59,7 +60,7 @@ export const getClassPerformance = async (req, res) => {
             {
                 $bucket: {
                     groupBy: "$totalMarks",
-                    boundaries: [0, 100, 200, 300, 400, 501],
+                    boundaries: [0, 35, 50, 60, 75, 90, 101], // Modified buckets for better grading visual
                     default: "Other",
                     output: {
                         count: { $sum: 1 }
@@ -126,6 +127,7 @@ export const getStudentPerformance = async (req, res) => {
         }
 
         const subjectWisePerformance = {};
+        const subjectTrend = []; // New array for trend analysis
 
         studentRecords.forEach(record => {
             const subject = record.subject;
@@ -141,6 +143,14 @@ export const getStudentPerformance = async (req, res) => {
                 marks,
                 testName: data['Test Name'] || data['testName'] || 'Assessment'
             });
+
+            // Flat structure for overall trend
+            subjectTrend.push({
+                testDate: record.aiTestDate,
+                subject: subject,
+                marks: marks,
+                testName: record.testType || data['Test Name']
+            });
         });
 
         res.status(200).json({
@@ -148,7 +158,8 @@ export const getStudentPerformance = async (req, res) => {
             data: {
                 studentDetails: studentRecords[0]?.csvData, // This will return whatever keys are there (usn or USN)
                 records: studentRecords,
-                subjectWisePerformance
+                subjectWisePerformance,
+                subjectTrend // Return trend data
             }
         });
 
@@ -165,6 +176,7 @@ export const getFilterOptions = async (req, res) => {
         const years = await Record.distinct("year");
         const sections = await Record.distinct("section");
         const subjects = await Record.distinct("subject");
+        const testTypes = await Record.distinct("testType");
 
         res.status(200).json({
             success: true,
@@ -172,7 +184,8 @@ export const getFilterOptions = async (req, res) => {
                 departments,
                 years,
                 sections,
-                subjects
+                subjects,
+                testTypes
             }
         });
     } catch (error) {

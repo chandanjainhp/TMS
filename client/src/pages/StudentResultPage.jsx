@@ -2,6 +2,7 @@ import { useState, useEffect } from "react";
 import { Link } from "react-router-dom";
 import { motion, AnimatePresence } from "framer-motion";
 import { Loader, Search, RefreshCw, CheckCircle, AlertCircle, ArrowLeft, Download } from "lucide-react";
+import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer, LineChart, Line } from 'recharts';
 import axios from "axios";
 import toast from "react-hot-toast";
 import jsPDF from "jspdf";
@@ -267,6 +268,25 @@ const StudentResultPage = () => {
                                 </div>
 
                                 <div className="p-6">
+                                    {/* Visual Analytics */}
+                                    <div className="mb-8 p-4 bg-gray-900/50 rounded-xl border border-gray-700/50">
+                                        <h3 className="text-sm font-semibold text-gray-400 uppercase tracking-wider mb-4">Performance Trends</h3>
+                                        <div className="h-64 w-full">
+                                            <ResponsiveContainer width="100%" height="100%">
+                                                <BarChart data={result.results.slice().reverse()}>
+                                                    <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#374151" />
+                                                    <XAxis dataKey="testName" stroke="#9CA3AF" tick={{ fontSize: 12 }} />
+                                                    <YAxis stroke="#9CA3AF" tick={{ fontSize: 12 }} />
+                                                    <Tooltip
+                                                        contentStyle={{ backgroundColor: '#1F2937', borderColor: '#374151', color: '#F3F4F6' }}
+                                                        itemStyle={{ color: '#F3F4F6' }}
+                                                        cursor={{ fill: '#374151', opacity: 0.4 }}
+                                                    />
+                                                    <Bar dataKey="totalMarks" name="Marks Obtained" fill="#6366F1" radius={[4, 4, 0, 0]} />
+                                                </BarChart>
+                                            </ResponsiveContainer>
+                                        </div>
+                                    </div>
                                     <h3 className="text-sm font-semibold text-gray-400 uppercase tracking-wider mb-4">Exam Performance</h3>
 
                                     <div className="space-y-4">

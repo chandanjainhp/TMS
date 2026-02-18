@@ -1,6 +1,6 @@
 import multer from "multer";
 import authMiddleware from '../middleware/authMiddleware.js';
-import {getAllStudents, updateStudents,importCsv,selectStudent,exportCsv,exportPdf} from '../controllers/EditingStudentController.js';
+import { getAllStudents, updateStudents, importCsv, selectStudent, exportCsv, exportPdf } from '../controllers/editingStudent.controller.js';
 import { Router } from 'express';
 const router = Router();
 

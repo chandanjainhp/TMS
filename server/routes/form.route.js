@@ -1,6 +1,6 @@
 import express from 'express';
 import { upload, validateFormData, handleUploadErrors } from '../middleware/uploadMiddleware.js';
-import { uploadRecords, getRecords, deleteRecord, updateRecord, getUploadBatches } from '../controllers/from.controller.js';
+import { uploadRecords, getRecords, deleteRecord, updateRecord, getUploadBatches } from '../controllers/form.controller.js';
 import { verifyToken } from '../middleware/verifyToken.js';
 
 const router = express.Router();

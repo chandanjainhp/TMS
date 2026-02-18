@@ -47,7 +47,9 @@ export const signup = async (req, res) => {
 			name,
 			verificationToken,
 			verificationTokenExpiresAt: Date.now() + 24 * 60 * 60 * 1000, // 24 hours
-			role: "teacher" // Only allowed emails can signup, assuming they are teachers/users
+			verificationTokenExpiresAt: Date.now() + 24 * 60 * 60 * 1000, // 24 hours
+			role: "teacher", // Only allowed emails can signup, assuming they are teachers/users
+			department: isAllowed.department || null // Inherit department from invitation
 		});
 
 		await user.save();

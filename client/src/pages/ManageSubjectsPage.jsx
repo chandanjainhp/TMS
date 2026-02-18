@@ -5,17 +5,24 @@ import { Link } from "react-router-dom";
 import { toast } from "react-hot-toast";
 
 import AdminLayout from '../components/admin/AdminLayout';
+import { useAuthStore } from "../store/authStore";
+import { useAdminAuthStore } from "../store/adminAuthStore";
 
 const ManageSubjectsPage = () => {
+    const { user } = useAuthStore();
+    const { admin } = useAdminAuthStore();
+    const currentUser = admin || user;
+    const isHOD = currentUser?.department && currentUser?.department !== 'Global';
+
     const [subjects, setSubjects] = useState([]);
     const [loading, setLoading] = useState(true);
-    const [filterBranch, setFilterBranch] = useState("");
+    const [filterBranch, setFilterBranch] = useState(isHOD ? currentUser.department : "");
     const [filterSemester, setFilterSemester] = useState("");
     const [searchTerm, setSearchTerm] = useState("");
 
     const [newSubject, setNewSubject] = useState({
         name: "",
-        branch: "",
+        branch: isHOD ? currentUser.department : "",
         semester: "",
         code: ""
     });
@@ -31,9 +38,13 @@ const ManageSubjectsPage = () => {
     const semesters = [1, 2, 3, 4, 5, 6, 7, 8];
 
     useEffect(() => {
+        if (isHOD) {
+            setFilterBranch(currentUser.department);
+            setNewSubject(prev => ({ ...prev, branch: currentUser.department }));
+        }
         fetchBranches();
         fetchSubjects();
-    }, []);
+    }, [isHOD, currentUser?.department]);
 
     // Also refetch subjects if filter changes
     useEffect(() => {
@@ -48,20 +59,7 @@ const ManageSubjectsPage = () => {
             const res = await axios.get("http://localhost:5000/api/branches", { withCredentials: true });
             if (res.data.success) {
                 if (res.data.data.length === 0) {
-                    // If no branches, seed default ones automatically? 
-                    // Or just fallback to default list?
-                    // Let's seed via API call if empty for convenience, OR just show empty list and let user add.
-                    // The user wants control.
-                    // Let's call seed endpoint if completely empty to be helpful.
-                    try {
-                        const seedRes = await axios.post("http://localhost:5000/api/branches/seed", {}, { withCredentials: true });
-                        if (seedRes.data.success) {
-                            fetchBranches(); // Refetch
-                            return;
-                        }
-                    } catch (err) {
-                        // Ignore seed error
-                    }
+                    // Try to seed but handled mainly by backend/setup
                 }
                 setBranches(res.data.data.map(b => b.name));
             }
@@ -128,7 +126,7 @@ const ManageSubjectsPage = () => {
             const res = await axios.post("http://localhost:5000/api/subjects", newSubject, { withCredentials: true });
             if (res.data.success) {
                 toast.success("Subject added successfully");
-                setNewSubject({ name: "", branch: "", semester: "", code: "" });
+                setNewSubject({ name: "", branch: isHOD ? currentUser.department : "", semester: "", code: "" });
                 fetchSubjects();
             }
         } catch (error) {
@@ -166,19 +164,21 @@ const ManageSubjectsPage = () => {
 
                         <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
                             <div>
-                                <h1 className="text-3xl font-bold text-gray-900">Manage Subjects</h1>
-                                <p className="text-gray-500">Add, edit, or remove subjects from the curriculum.</p>
+                                <h1 className="text-3xl font-bold text-gray-900">Curriculum Manager</h1>
+                                <p className="text-gray-500">Configure subjects and course structures for departments.</p>
                             </div>
-                            <button
-                                onClick={() => setShowAddBranch(!showAddBranch)}
-                                className="bg-white border border-gray-300 text-gray-700 px-4 py-2 rounded-lg text-sm font-medium hover:bg-gray-50 flex items-center gap-2"
-                            >
-                                <Plus className="w-4 h-4" /> Add Branch
-                            </button>
+                            {!isHOD && (
+                                <button
+                                    onClick={() => setShowAddBranch(!showAddBranch)}
+                                    className="bg-white border border-gray-300 text-gray-700 px-4 py-2 rounded-lg text-sm font-medium hover:bg-gray-50 flex items-center gap-2"
+                                >
+                                    <Plus className="w-4 h-4" /> Add Branch
+                                </button>
+                            )}
                         </div>
 
                         {/* Add Branch Section (Conditional) */}
-                        {showAddBranch && (
+                        {showAddBranch && !isHOD && (
                             <div className="bg-white p-4 rounded-xl shadow-sm border border-indigo-100 bg-indigo-50/50 animate-in slide-in-from-top-2">
                                 <h3 className="text-sm font-bold text-gray-800 mb-3">Add New Branch</h3>
                                 <form onSubmit={handleAddBranch} className="flex gap-3">
@@ -220,8 +220,9 @@ const ManageSubjectsPage = () => {
                                     <label className="block text-sm font-medium text-gray-700 mb-1">Branch</label>
                                     <select
                                         value={newSubject.branch}
+                                        disabled={isHOD}
                                         onChange={e => setNewSubject({ ...newSubject, branch: e.target.value })}
-                                        className="w-full rounded-lg border-gray-300 border px-3 py-2 text-sm focus:ring-2 focus:ring-indigo-500 outline-none"
+                                        className={`w-full rounded-lg border-gray-300 border px-3 py-2 text-sm focus:ring-2 focus:ring-indigo-500 outline-none ${isHOD ? 'bg-gray-100 text-gray-500' : ''}`}
                                     >
                                         <option value="">Select Branch</option>
                                         {branches.map(b => <option key={b} value={b}>{b}</option>)}
@@ -266,8 +267,9 @@ const ManageSubjectsPage = () => {
                                 <div className="flex gap-4 w-full md:w-auto">
                                     <select
                                         value={filterBranch}
+                                        disabled={isHOD}
                                         onChange={e => setFilterBranch(e.target.value)}
-                                        className="rounded-lg border-gray-300 border px-3 py-2 text-sm focus:ring-2 focus:ring-indigo-500 outline-none"
+                                        className={`rounded-lg border-gray-300 border px-3 py-2 text-sm focus:ring-2 focus:ring-indigo-500 outline-none ${isHOD ? 'bg-gray-100 text-gray-500' : ''}`}
                                     >
                                         <option value="">All Branches</option>
                                         {branches.map(b => <option key={b} value={b}>{b}</option>)}

@@ -17,8 +17,16 @@ const userSchema = new mongoose.Schema(
 		},
 		role: {
 			type: String,
-			enum: ['user', 'admin', 'teacher'],
-			default: 'user',
+			// principal = Super Admin, hod = Admin, instructor = Teacher
+			// Legacy support: 'admin' mapped to 'hod', 'teacher' mapped to 'instructor'
+			enum: ['principal', 'hod', 'instructor', 'admin', 'teacher', 'user'],
+			default: 'instructor',
+		},
+		department: {
+			type: String,
+			// Can be a specific branch name OR 'Global' for Super Admin
+			required: false,
+			default: null
 		},
 		lastLogin: {
 			type: Date,

@@ -23,14 +23,16 @@ const AdminAnalyticsPage = () => {
         department: '',
         year: '',
         section: '',
-        subject: ''
+        subject: '',
+        testType: ''
     });
 
     // Suggestions state
     const [suggestions, setSuggestions] = useState({
         departments: [],
         sections: [],
-        subjects: []
+        subjects: [],
+        testTypes: []
     });
 
     const reportRef = useRef(null);
@@ -80,11 +82,12 @@ const AdminAnalyticsPage = () => {
     // Helper to label buckets (matches controller logic)
     const getRangeLabel = (id) => {
         const ranges = {
-            0: '0-100 (Low)',
-            100: '100-200 (Below Avg)',
-            200: '200-300 (Average)',
-            300: '300-400 (Good)',
-            400: '400-500 (Excellent)'
+            0: '0-35 (Fail)',
+            35: '35-50 (Pass)',
+            50: '50-60 (Second Class)',
+            60: '60-75 (First Class)',
+            75: '75-90 (Distinction)',
+            90: '90-100 (Outstanding)'
         };
         return ranges[id] || 'Other';
     };
@@ -194,6 +197,13 @@ const AdminAnalyticsPage = () => {
                         <datalist id="subjects">
                             {suggestions.subjects?.map((sub, idx) => sub && <option key={idx} value={sub} />)}
                         </datalist>
+                    </div>
+                    <div>
+                        <label className="block text-xs font-semibold text-gray-500 mb-1 uppercase">Test Type</label>
+                        <select name="testType" value={filters.testType} onChange={handleFilterChange} className="w-full px-3 py-2 bg-gray-50 border border-gray-200 rounded-lg text-sm focus:ring-2 focus:ring-indigo-500 outline-none">
+                            <option value="">All Tests</option>
+                            {suggestions.testTypes?.map((type, idx) => type && <option key={idx} value={type}>{type}</option>)}
+                        </select>
                     </div>
                     <button
                         onClick={fetchAnalytics}

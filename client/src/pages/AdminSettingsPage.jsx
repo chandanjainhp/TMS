@@ -1,8 +1,14 @@
 import AdminLayout from "../components/admin/AdminLayout";
 import TeacherProfileDisplay from "../components/settings/TeacherProfileDisplay";
 import ChangePassword from "../components/settings/ChangePassword";
+import { useAuthStore } from "../store/authStore";
+import { useAdminAuthStore } from "../store/adminAuthStore";
 
 const AdminSettingsPage = () => {
+  const { user } = useAuthStore();
+  const { admin } = useAdminAuthStore();
+  const currentUser = admin || user;
+
   return (
     <AdminLayout>
       <div className="w-full px-4 py-4">
@@ -23,7 +29,7 @@ const AdminSettingsPage = () => {
               </svg>
               <h2 className="text-sm font-bold text-gray-900">Profile Information</h2>
             </div>
-            <TeacherProfileDisplay />
+            <TeacherProfileDisplay user={currentUser} />
           </section>
 
           {/* Change Password Section */}
@@ -53,11 +59,13 @@ const AdminSettingsPage = () => {
                   </svg>
                 </div>
                 <div>
-                  <h3 className="font-bold text-gray-900 text-xs mb-1">Administrator Role</h3>
+                  <h3 className="font-bold text-gray-900 text-xs mb-1">
+                    {currentUser?.department ? `${currentUser.department} Admin` : 'Super Administrator'}
+                  </h3>
                   <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 text-[10px] text-gray-600">
                     <div className="flex items-center gap-1.5">
                       <div className="w-1.5 h-1.5 rounded-full bg-green-500"></div>
-                      <span>All Records Access</span>
+                      <span>{currentUser?.department ? 'Department Access' : 'All Records Access'}</span>
                     </div>
                     <div className="flex items-center gap-1.5">
                       <div className="w-1.5 h-1.5 rounded-full bg-green-500"></div>

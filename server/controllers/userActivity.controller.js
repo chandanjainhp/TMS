@@ -47,10 +47,10 @@ export const logUserActivity = async (req, res) => {
 export const getUserActivities = async (req, res) => {
   try {
     const { startDate, endDate, action, userId } = req.query;
-    
+
     // Build query
     const query = {};
-    
+
     // Filter by date range
     if (startDate || endDate) {
       query.createdAt = {};
@@ -58,39 +58,55 @@ export const getUserActivities = async (req, res) => {
         query.createdAt.$gte = new Date(startDate);
       }
       if (endDate) {
-        // Add one day to include the end date fully
         const endDateObj = new Date(endDate);
         endDateObj.setDate(endDateObj.getDate() + 1);
         query.createdAt.$lte = endDateObj;
       }
     }
-    
-    // Filter by action
+
     if (action) {
       query.action = action;
     }
-    
-    // Filter by userId if provided and user is admin
-    // For regular users, only show their own activity
+
     if (req.userId) {
-      // Check if the requesting user is an admin
       const user = await User.findById(req.userId);
-      const isAdmin = user && user.email.includes("admin"); // Simple admin check - improve as needed
-      
-      if (isAdmin && userId) {
-        query.userId = userId;
+      const isSuperAdmin = user.role === 'principal' || user.role === 'superAdmin';
+      const isHOD = user.role === 'admin' && user.department && user.department !== 'Global';
+
+      // 1. Scoping Logic
+      if (isSuperAdmin) {
+        // Can see all. If userId filter provided, use it.
+        if (userId) query.userId = userId;
+      } else if (isHOD) {
+        // Can see Dept Users.
+        // Find all users in Dept
+        const deptUsers = await User.find({ department: user.department }).select('_id');
+        const deptUserIds = deptUsers.map(u => u._id);
+
+        // If specific userId requested, check if it's in dept
+        if (userId) {
+          // Check if string userId is in deptUserIds array (need string comparison)
+          if (deptUserIds.some(id => id.toString() === userId)) {
+            query.userId = userId;
+          } else {
+            return res.status(200).json({ success: true, count: 0, data: [] }); // Not authorized to see this user
+          }
+        } else {
+          // Show all dept users
+          query.userId = { $in: deptUserIds };
+        }
       } else {
-        // Regular users can only see their own activity
+        // Regular user: Only own
         query.userId = req.userId;
       }
     }
-    
+
     // Get activities with user details
     const activities = await UserActivity.find(query)
       .sort({ createdAt: -1 })
-      .populate("userId", "name email")
+      .populate("userId", "name email department role") // Added department/role
       .lean();
-    
+
     res.status(200).json({
       success: true,
       count: activities.length,
@@ -110,55 +126,71 @@ export const getUserActivities = async (req, res) => {
 export const getActivityStats = async (req, res) => {
   try {
     const { startDate, endDate } = req.query;
-    
+
     // Build date range filter
-    const dateFilter = {};
+    const matchFilter = {};
     if (startDate || endDate) {
-      dateFilter.createdAt = {};
+      matchFilter.createdAt = {};
       if (startDate) {
-        dateFilter.createdAt.$gte = new Date(startDate);
+        matchFilter.createdAt.$gte = new Date(startDate);
       }
       if (endDate) {
-        // Add one day to include the end date fully
         const endDateObj = new Date(endDate);
         endDateObj.setDate(endDateObj.getDate() + 1);
-        dateFilter.createdAt.$lte = endDateObj;
+        matchFilter.createdAt.$lte = endDateObj;
       }
     }
-    
+
+    // SCOPING
+    if (req.userId) {
+      const user = await User.findById(req.userId);
+      const isSuperAdmin = user.role === 'principal' || user.role === 'superAdmin';
+      const isHOD = user.role === 'admin' && user.department && user.department !== 'Global';
+
+      if (!isSuperAdmin) {
+        if (isHOD) {
+          const deptUsers = await User.find({ department: user.department }).select('_id');
+          const deptUserIds = deptUsers.map(u => u._id);
+          matchFilter.userId = { $in: deptUserIds };
+        } else {
+          matchFilter.userId = user._id; // Regular user sees own stats
+        }
+      }
+    }
+
     // Get count by action type
     const actionStats = await UserActivity.aggregate([
-      { $match: dateFilter },
+      { $match: matchFilter },
       { $group: { _id: "$action", count: { $sum: 1 } } },
       { $sort: { count: -1 } }
     ]);
-    
+
     // Get count by day
     const dailyStats = await UserActivity.aggregate([
-      { $match: dateFilter },
+      { $match: matchFilter },
       {
         $group: {
-          _id: { 
-            $dateToString: { format: "%Y-%m-%d", date: "$createdAt" } 
+          _id: {
+            $dateToString: { format: "%Y-%m-%d", date: "$createdAt" }
           },
           count: { $sum: 1 }
         }
       },
       { $sort: { _id: 1 } }
     ]);
-    
+
     // Get most active users
     const userStats = await UserActivity.aggregate([
-      { $match: dateFilter },
+      { $match: matchFilter },
       { $group: { _id: "$userId", count: { $sum: 1 } } },
       { $sort: { count: -1 } },
       { $limit: 10 }
     ]);
-    
+
     // Get user details for most active users
     const userIds = userStats.map(stat => stat._id);
     const users = await User.find({ _id: { $in: userIds } }, "name email");
-    
+
     // Map user details to stats
     const userStatsWithDetails = userStats.map(stat => {
       const user = users.find(u => u._id.toString() === stat._id.toString());
@@ -169,7 +201,7 @@ export const getActivityStats = async (req, res) => {
         email: user ? user.email : "Unknown"
       };
     });
-    
+
     res.status(200).json({
       success: true,
       data: {

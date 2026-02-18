@@ -37,6 +37,14 @@ const messageSchema = new mongoose.Schema({
     isRead: {
         type: Boolean,
         default: false
+    },
+    status: {
+        type: String,
+        enum: ['sent', 'delivered', 'read'],
+        default: 'sent'
+    },
+    readAt: {
+        type: Date
     }
 }, { timestamps: true });
 

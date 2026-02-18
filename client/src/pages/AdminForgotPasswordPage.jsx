@@ -5,6 +5,8 @@ import { Link } from "react-router-dom";
 import Input from "../components/login/Input";
 import toast from "react-hot-toast";
 
+export default AdminForgotPasswordPage;
+
 const AdminForgotPasswordPage = () => {
     const [email, setEmail] = useState("backupid849@gmail.com");
     const [isLoading, setIsLoading] = useState(false);
@@ -12,7 +14,7 @@ const AdminForgotPasswordPage = () => {
 
     const handleSubmit = async (e) => {
         e.preventDefault();
-        
+
         // Validate email
         if (email !== "backupid849@gmail.com") {
             toast.error("Admin password reset is only available for authorized backup email");
@@ -56,23 +58,23 @@ const AdminForgotPasswordPage = () => {
             >
                 <div className='p-8'>
                     <div className='flex flex-col items-center mb-6'>
-                        <div className='w-16 h-16 bg-gradient-to-br from-indigo-600 via-purple-600 to-pink-600 rounded-full flex items-center justify-center mb-3'>
-                            <Shield className='w-8 h-8 text-white' />
+                        <div className='w-16 h-16 bg-red-100 rounded-full flex items-center justify-center mb-4'>
+                            <Shield className='w-8 h-8 text-red-600' />
                         </div>
-                        <h2 className='text-3xl font-bold text-center bg-gradient-to-r from-indigo-600 via-purple-600 to-pink-600 bg-clip-text text-transparent'>
-                            Admin Password Reset
+                        <h2 className='text-3xl font-bold text-center text-gray-900'>
+                            Admin Recovery
                         </h2>
-                        <p className='text-sm text-gray-700 mt-2 text-center'>
-                            {isSubmitted 
-                                ? "Check your email for the OTP code" 
+                        <p className='text-sm text-gray-600 mt-2 text-center'>
+                            {isSubmitted
+                                ? "Check your email for the OTP code"
                                 : "Enter your backup email to receive OTP"}
                         </p>
                     </div>
 
                     {!isSubmitted ? (
                         <form onSubmit={handleSubmit}>
-                            <div className='mb-4'>
-                                <label className='block text-sm font-medium text-gray-800 mb-2'>
+                            <div className='mb-6'>
+                                <label className='block text-sm font-medium text-gray-700 mb-2'>
                                     Authorized Backup Email
                                 </label>
                                 <Input
@@ -83,21 +85,22 @@ const AdminForgotPasswordPage = () => {
                                     onChange={(e) => setEmail(e.target.value)}
                                     required
                                 />
-                                <p className='text-xs text-gray-700 mt-2'>
-                                    ⚠️ Only the authorized backup email can reset admin password
-                                </p>
+                                <div className="flex items-center gap-2 mt-2 text-amber-600 text-xs bg-amber-50 p-2 rounded border border-amber-100">
+                                    <span>⚠️</span>
+                                    <span>Only authorized backup email can reset password</span>
+                                </div>
                             </div>
 
                             <motion.button
-                                whileHover={{ scale: 1.02 }}
-                                whileTap={{ scale: 0.98 }}
-                                className='w-full py-3 px-4 bg-gradient-to-r from-indigo-600 via-purple-600 to-pink-600 text-white font-bold rounded-lg shadow-lg hover:shadow-xl focus:outline-none focus:ring-2 focus:ring-purple-500 focus:ring-offset-2 transition duration-200'
+                                whileHover={{ scale: 1.01 }}
+                                whileTap={{ scale: 0.99 }}
+                                className='w-full py-3 px-4 bg-indigo-600 text-white font-bold rounded-xl shadow-lg hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:ring-offset-2 transition duration-200'
                                 type='submit'
                                 disabled={isLoading}
                             >
                                 {isLoading ? (
                                     <div className='flex items-center justify-center gap-2'>
-                                        <div className='w-5 h-5 border-t-2 border-white rounded-full animate-spin' />
+                                        <Loader className="animate-spin w-5 h-5" />
                                         Sending OTP...
                                     </div>
                                 ) : (
@@ -131,9 +134,9 @@ const AdminForgotPasswordPage = () => {
 
                             <Link to='/admin/reset-password-otp'>
                                 <motion.button
-                                    whileHover={{ scale: 1.02 }}
-                                    whileTap={{ scale: 0.98 }}
-                                    className='w-full py-3 px-4 bg-gradient-to-r from-indigo-600 via-purple-600 to-pink-600 text-white font-bold rounded-lg shadow-lg hover:shadow-xl focus:outline-none focus:ring-2 focus:ring-purple-500 focus:ring-offset-2 transition duration-200'
+                                    whileHover={{ scale: 1.01 }}
+                                    whileTap={{ scale: 0.99 }}
+                                    className='w-full py-3 px-4 bg-indigo-600 text-white font-bold rounded-xl shadow-lg hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:ring-offset-2 transition duration-200'
                                 >
                                     <div className='flex items-center justify-center gap-2'>
                                         <KeyRound className='w-5 h-5' />
@@ -152,10 +155,10 @@ const AdminForgotPasswordPage = () => {
                     )}
                 </div>
 
-                <div className='px-8 py-4 bg-gradient-to-r from-indigo-50 via-purple-50 to-pink-50 flex justify-center'>
+                <div className='px-8 py-4 bg-gray-50 flex justify-center border-t border-gray-100'>
                     <Link
                         to='/admin-login'
-                        className='flex items-center gap-2 text-sm text-gray-700 hover:text-indigo-700 font-medium transition-colors'
+                        className='flex items-center gap-2 text-sm text-gray-600 hover:text-indigo-600 font-medium transition-colors'
                     >
                         <ArrowLeft className='w-4 h-4' />
                         Back to Admin Login
@@ -165,5 +168,3 @@ const AdminForgotPasswordPage = () => {
         </div>
     );
 };
-
-export default AdminForgotPasswordPage;

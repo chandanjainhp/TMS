@@ -21,6 +21,7 @@ import AdminLoginPage from "./pages/AdminLoginPage";
 import AdminForgotPasswordPage from "./pages/AdminForgotPasswordPage";
 import AdminResetPasswordOTPPage from "./pages/AdminResetPasswordOTPPage";
 import UploadPage from "./pages/UploadPage";
+import StudentRepositoryPage from "./pages/StudentRepositoryPage";
 import RecordsPage from "./pages/RecordsPage";
 import FormDataPage from "./pages/FormDataPage";
 import AdminRecordsPage from "./pages/AdminRecordsPage";
@@ -33,6 +34,7 @@ import StudentResultPage from "./pages/StudentResultPage";
 import MessagingPage from "./pages/MessagingPage";
 import AdminMessagesPage from "./pages/AdminMessagesPage";
 import TeacherDashboardPage from "./pages/TeacherDashboardPage";
+import PrincipalDashboardPage from "./pages/PrincipalDashboardPage";
 import {
   AboutPage, FeaturesPage, PricingPage, SecurityPage,
   DocumentationPage, GuidesPage, SupportPage,
@@ -69,12 +71,15 @@ const AdminRoute = ({ children }) => {
   const { isAuthenticated: adminIsAuthenticated, admin } = useAdminAuthStore();
 
   // Check if logged in via adminAuthStore
-  if (adminIsAuthenticated && admin && admin.role === 'admin') {
+  // Enhanced to support 'principal', 'hod' (admin), and legacy 'admin'
+  const ALLOWED_ADMIN_ROLES = ['admin', 'hod', 'principal', 'superAdmin'];
+
+  if (adminIsAuthenticated && admin && ALLOWED_ADMIN_ROLES.includes(admin.role)) {
     return children;
   }
 
   // Fallback: Check if logged in via regular authStore with admin role
-  if (userIsAuthenticated && user && user.role === 'admin' && user.isVerified) {
+  if (userIsAuthenticated && user && ALLOWED_ADMIN_ROLES.includes(user.role) && user.isVerified) {
     return children;
   }
 
@@ -220,11 +225,26 @@ function App() {
             }
           />
 
+          {/*
           <Route
             path="/from"
+            element={<Navigate to="/score-entry" replace />}
+          />
+          */}
+
+          <Route
+            path="/score-entry"
             element={
               <ProtectedRoute>
                 <UploadPage />
+              </ProtectedRoute>
+            }
+          />
+          <Route
+            path="/academic-ledger"
+            element={
+              <ProtectedRoute>
+                <StudentRepositoryPage />
               </ProtectedRoute>
             }
           />
@@ -237,7 +257,7 @@ function App() {
             }
           />
           <Route
-            path="/form-data"
+            path="/submission-history"
             element={
               <ProtectedRoute>
                 <FormDataPage />
@@ -357,6 +377,17 @@ function App() {
           <Route path="/verify-email" element={<EmailVerificationPage />} />
           <Route path="/forgot-password" element={<ForgotPasswordPage />} />
           <Route path="/reset-password" element={<ResetPasswordPage />} />
+
+          {/* Principal Route */}
+          <Route
+            path="/principal"
+            element={
+              <AdminRoute>
+                <PrincipalDashboardPage />
+              </AdminRoute>
+            }
+          />
+
           <Route path="/results" element={<StudentResultPage />} />
 
           {/* Static Pages */}

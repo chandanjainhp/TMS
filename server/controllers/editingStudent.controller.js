@@ -1,4 +1,4 @@
-import EditingStudentModel from "../models/EditingStudent.model.js";
+import EditingStudentModel from "../models/editingStudent.model.js";
 import csv from 'csv-parser';
 import fs from 'fs';
 import { Parser } from 'json2csv';

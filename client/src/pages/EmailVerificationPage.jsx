@@ -3,6 +3,8 @@ import { useNavigate } from "react-router-dom";
 import { motion } from "framer-motion";
 import { useAuthStore } from "../store/authStore";
 import toast from "react-hot-toast";
+import { Mail, ArrowLeft } from "lucide-react";
+import { Link } from "react-router-dom";
 
 const EmailVerificationPage = () => {
 	const [code, setCode] = useState(["", "", "", "", "", ""]);
@@ -72,57 +74,74 @@ const EmailVerificationPage = () => {
 	}, [code]);
 
 	return (
-		<div className='min-h-screen bg-gradient-to-br from-gray-900 via-green-900 to-emerald-900 flex items-center justify-center relative overflow-hidden'>
-		<div className='max-w-md w-full bg-gray-800 bg-opacity-50 backdrop-filter backdrop-blur-xl rounded-2xl shadow-xl overflow-hidden'>
+		<div className='min-h-screen bg-gradient-to-br from-indigo-50 via-purple-50 to-pink-50 flex items-center justify-center relative overflow-hidden'>
 			<motion.div
-				initial={{ opacity: 0, y: -50 }}
+				initial={{ opacity: 0, y: 20 }}
 				animate={{ opacity: 1, y: 0 }}
 				transition={{ duration: 0.5 }}
-				className='bg-gray-800 bg-opacity-50 backdrop-filter backdrop-blur-xl rounded-2xl shadow-2xl p-8 w-full max-w-md'
+				className='max-w-md w-full bg-white rounded-2xl shadow-xl overflow-hidden'
 			>
-				<h2 className='text-3xl font-bold mb-6 text-center bg-gradient-to-r from-green-400 to-emerald-500 text-transparent bg-clip-text'>
-					Verify Your Email
-				</h2>
-				<p className='text-center text-gray-300 mb-6'>Enter the 6-digit code sent to your email address.</p>
-
-				<form onSubmit={handleSubmit} className='space-y-6'>
-					<div className='flex justify-between'>
-						{code.map((digit, index) => (
-							<input
-								key={index}
-								ref={(el) => (inputRefs.current[index] = el)}
-								type='text'
-								maxLength='6'
-								value={digit}
-								onChange={(e) => handleChange(index, e.target.value)}
-								onKeyDown={(e) => handleKeyDown(index, e)}
-								className='w-12 h-12 text-center text-2xl font-bold bg-gray-700 text-white border-2 border-gray-600 rounded-lg focus:border-green-500 focus:outline-none'
-							/>
-						))}
+				<div className='p-8'>
+					<div className="flex justify-center mb-6">
+						<div className="w-16 h-16 bg-indigo-100 rounded-full flex items-center justify-center">
+							<Mail className="w-8 h-8 text-indigo-600" />
+						</div>
 					</div>
-					{error && <p className='text-red-500 font-semibold mt-2'>{error}</p>}
-					<motion.button
-						whileHover={{ scale: 1.05 }}
-						whileTap={{ scale: 0.95 }}
-						type='submit'
-						disabled={isLoading || code.some((digit) => !digit)}
-						className='w-full bg-gradient-to-r from-green-500 to-emerald-600 text-white font-bold py-3 px-4 rounded-lg shadow-lg hover:from-green-600 hover:to-emerald-700 focus:outline-none focus:ring-2 focus:ring-green-500 focus:ring-opacity-50 disabled:opacity-50'
-					>
-						{isLoading ? "Verifying..." : "Verify Email"}
-					</motion.button>
-				</form>
 
-				<div className='mt-4 text-center'>
-					<button
-						onClick={handleResendEmail}
-						disabled={isLoading}
-						className='text-green-400 hover:text-green-300 font-medium disabled:opacity-50'
-					>
-						Didn't receive the code? Resend Email
-					</button>
+					<h2 className='text-3xl font-bold mb-4 text-center text-gray-900'>
+						Verify Your Email
+					</h2>
+					<p className='text-center text-gray-600 mb-8'>
+						Enter the 6-digit code sent to your email address to confirm your account.
+					</p>
+
+					<form onSubmit={handleSubmit} className='space-y-6'>
+						<div className='flex justify-between gap-2'>
+							{code.map((digit, index) => (
+								<input
+									key={index}
+									ref={(el) => (inputRefs.current[index] = el)}
+									type='text'
+									maxLength='6'
+									value={digit}
+									onChange={(e) => handleChange(index, e.target.value)}
+									onKeyDown={(e) => handleKeyDown(index, e)}
+									className='w-12 h-12 text-center text-2xl font-bold bg-gray-50 text-gray-900 border-2 border-gray-200 rounded-lg focus:border-indigo-500 focus:outline-none transition-colors'
+								/>
+							))}
+						</div>
+
+						{error && <p className='text-red-500 text-sm font-medium text-center bg-red-50 p-2 rounded-lg border border-red-100'>{error}</p>}
+
+						<motion.button
+							whileHover={{ scale: 1.01 }}
+							whileTap={{ scale: 0.99 }}
+							type='submit'
+							disabled={isLoading || code.some((digit) => !digit)}
+							className='w-full bg-indigo-600 text-white font-bold py-3 px-4 rounded-xl shadow-lg hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:ring-offset-2 disabled:opacity-50 disabled:cursor-not-allowed transition-all'
+						>
+							{isLoading ? "Verifying..." : "Verify Email"}
+						</motion.button>
+					</form>
+
+					<div className='mt-6 text-center text-sm'>
+						<p className="text-gray-600">Didn't receive the code?</p>
+						<button
+							onClick={handleResendEmail}
+							disabled={isLoading}
+							className='text-indigo-600 hover:text-indigo-800 font-semibold mt-1 hover:underline disabled:opacity-50'
+						>
+							Resend Email
+						</button>
+					</div>
+				</div>
+
+				<div className='px-8 py-4 bg-gray-50 flex justify-center border-t border-gray-100'>
+					<Link to="/login" className='text-sm text-gray-600 hover:text-indigo-600 font-medium flex items-center transition-colors'>
+						<ArrowLeft className='h-4 w-4 mr-2' /> Back to Login
+					</Link>
 				</div>
 			</motion.div>
-		</div>
 		</div>
 	);
 };

@@ -33,6 +33,8 @@ const recordSchema = new mongoose.Schema({
   subjectFileName: String,
   csvData: Object,
   uploadBatchId: { type: mongoose.Schema.Types.ObjectId, index: true },
+  testType: { type: String, required: true }, // e.g., 'A1', 'A2'
+  status: { type: String, default: 'Draft' }, // 'Draft' or 'Final' used for tracking upload state
 }, { timestamps: true });
 
 // Create model

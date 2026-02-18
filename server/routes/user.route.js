@@ -4,16 +4,13 @@ import { verifyToken } from "../middleware/verifyToken.js";
 
 const router = express.Router();
 
-// Apply verifyToken middleware to all routes
-router.use(verifyToken);
+// Get all users (requires authentication)
+router.get("/", verifyToken, getAllUsers);
 
-// Get all users (admin only)
-router.get("/", getAllUsers);
-
-// Get user stats (admin only)
-router.get("/stats", getUserStats);
+// Get user stats
+router.get("/stats", verifyToken, getUserStats);
 
 // Get user by ID
-router.get("/:id", getUserById);
+router.get("/:id", verifyToken, getUserById);
 
 export default router;

@@ -14,6 +14,11 @@ const allowedEmailSchema = new mongoose.Schema(
             ref: "User",
             required: true,
         },
+        department: {
+            type: String,
+            required: false, // Optional for Super Admins or global allowed emails
+            default: null
+        },
     },
     { timestamps: true }
 );

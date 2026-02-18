@@ -261,7 +261,7 @@ const FormDataViewer = () => {
         {/* Header Section */}
         <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 bg-white p-4 rounded-2xl shadow-sm border border-gray-100">
           <div>
-            <h1 className="text-xl sm:text-2xl font-bold text-gray-900">Student Records Repository</h1>
+            <h1 className="text-xl sm:text-2xl font-bold text-gray-900">Submission History</h1>
             <p className="text-gray-500 mt-0.5 flex items-center gap-2 text-sm">
               <span className="bg-indigo-100 text-indigo-700 px-2 py-0.5 rounded text-xs font-medium">
                 {filteredRecords.length}

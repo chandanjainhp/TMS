@@ -34,6 +34,8 @@ export const isAdmin = async (req, res, next) => {
 		if (!user || user.role !== 'admin') {
 			return res.status(403).json({ success: false, message: "Access denied - Admin only" });
 		}
+		// Attach user to request for controllers
+		req.user = user;
 		next();
 	} catch (error) {
 		console.log("Error in isAdmin ", error);

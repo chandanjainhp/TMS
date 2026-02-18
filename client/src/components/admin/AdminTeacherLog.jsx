@@ -2,6 +2,7 @@ import { useState, useEffect } from 'react';
 import axios from 'axios';
 import { format } from 'date-fns';
 import { Search, Plus, Calendar, Filter, Download, UserCheck, UserPlus, Users, Activity } from 'lucide-react';
+import { useAdminAuthStore } from '../../store/adminAuthStore'; // Import admin store
 
 // DatePicker component
 const DatePicker = ({ value, onChange }) => (
@@ -14,6 +15,7 @@ const DatePicker = ({ value, onChange }) => (
 );
 
 const AdminTeacherLog = () => {
+  const { admin } = useAdminAuthStore(); // Get current admin info
   const [startDate, setStartDate] = useState(null);
   const [endDate, setEndDate] = useState(null);
   const [searchTerm, setSearchTerm] = useState('');
@@ -27,8 +29,27 @@ const AdminTeacherLog = () => {
   // Modal State
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [newEmail, setNewEmail] = useState('');
+  const [selectedBranch, setSelectedBranch] = useState(''); // New state
+  const [branches, setBranches] = useState([]); // Branches list
   const [addEmailLoading, setAddEmailLoading] = useState(false);
   const [addEmailMessage, setAddEmailMessage] = useState(null);
+
+  useEffect(() => {
+    fetchBranches();
+  }, []);
+
+  const fetchBranches = async () => {
+    try {
+      const res = await axios.get("http://localhost:5000/api/branches", { withCredentials: true });
+      if (res.data.success) {
+        setBranches(res.data.data.map(b => b.name));
+      }
+    } catch (error) {
+      console.error("Error fetching branches:", error);
+      // Fallback defaults
+      setBranches(['BCA', 'PMCS', 'PME', 'PCM', 'B.Com', 'B.Sc', 'B.A', 'B.B.A', 'MCA', 'M.Sc', 'M.Com']);
+    }
+  };
 
   useEffect(() => {
     const fetchUsers = async () => {
@@ -62,16 +83,28 @@ const AdminTeacherLog = () => {
 
   const handleAddEmail = async (e) => {
     e.preventDefault();
+
+    // Validation
+    const isHOD = admin?.department && admin.department !== 'Global';
+    if (!isHOD && !selectedBranch) {
+      setAddEmailMessage({ type: 'error', text: "Please select a branch" });
+      return;
+    }
+
     setAddEmailLoading(true);
     setAddEmailMessage(null);
     try {
       const response = await axios.post(
         'http://localhost:5000/api/allowed-emails/add',
-        { email: newEmail },
+        {
+          email: newEmail,
+          department: isHOD ? admin.department : selectedBranch
+        },
         { withCredentials: true }
       );
       setAddEmailMessage({ type: 'success', text: response.data.message });
       setNewEmail('');
+      setSelectedBranch('');
       setTimeout(() => {
         setIsModalOpen(false);
         setAddEmailMessage(null);
@@ -106,15 +139,21 @@ const AdminTeacherLog = () => {
     currentPage * itemsPerPage
   );
 
+  const isHOD = admin?.department && admin.department !== 'Global';
+
   return (
     <div className="w-full">
       {/* Header & Actions - Super Compact */}
       <div className="flex flex-col md:flex-row md:items-center justify-between gap-3 mb-4">
         <div>
           <h1 className="text-xl font-bold text-gray-900 tracking-tight">Teacher Registry</h1>
+          {isHOD && <span className="text-xs text-indigo-600 font-semibold bg-indigo-50 px-2 py-1 rounded-full">{admin.department} Department</span>}
         </div>
         <button
-          onClick={() => setIsModalOpen(true)}
+          onClick={() => {
+            setIsModalOpen(true);
+            if (isHOD) setSelectedBranch(admin.department);
+          }}
           className="inline-flex items-center gap-1.5 bg-indigo-600 hover:bg-indigo-700 text-white px-3 py-1.5 rounded-lg font-semibold shadow-sm transition-all text-xs"
         >
           <Plus className="h-3.5 w-3.5" />
@@ -203,6 +242,7 @@ const AdminTeacherLog = () => {
               <tr>
                 <th className="px-4 py-2 text-[10px] font-bold text-gray-500 uppercase tracking-wider">User</th>
                 <th className="px-4 py-2 text-[10px] font-bold text-gray-500 uppercase tracking-wider">Role</th>
+                <th className="px-4 py-2 text-[10px] font-bold text-gray-500 uppercase tracking-wider">Dept</th>
                 <th className="px-4 py-2 text-[10px] font-bold text-gray-500 uppercase tracking-wider">Status</th>
                 <th className="px-4 py-2 text-[10px] font-bold text-gray-500 uppercase tracking-wider">Last Active</th>
                 <th className="px-4 py-2 text-[10px] font-bold text-gray-500 uppercase tracking-wider">Joined</th>
@@ -210,7 +250,7 @@ const AdminTeacherLog = () => {
             </thead>
             <tbody className="divide-y divide-gray-200">
               {loading ? (
-                <tr><td colSpan="5" className="p-4 text-center text-xs text-gray-500">Loading records...</td></tr>
+                <tr><td colSpan="6" className="p-4 text-center text-xs text-gray-500">Loading records...</td></tr>
               ) : currentUsers.map((user) => (
                 <tr key={user._id} className="hover:bg-gray-50 transition-colors">
                   <td className="px-4 py-2">
@@ -230,6 +270,9 @@ const AdminTeacherLog = () => {
                         user.role === 'teacher' ? 'bg-indigo-100 text-indigo-700' : 'bg-gray-100 text-gray-700'}`}>
                       {user.role}
                     </span>
+                  </td>
+                  <td className="px-4 py-2">
+                    <span className="text-xs text-gray-600">{user.department || '-'}</span>
                   </td>
                   <td className="px-4 py-2">
                     {user.isVerified ? (
@@ -312,6 +355,28 @@ const AdminTeacherLog = () => {
                   className="w-full px-4 py-2.5 rounded-lg border border-gray-300 focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 outline-none transition-all"
                 />
               </div>
+
+              {/* Branch Selection Dropdown - Only show if NOT HOD */}
+              {!isHOD ? (
+                <div className="mb-4">
+                  <label className="block text-sm font-semibold text-gray-700 mb-2">Department / Branch</label>
+                  <select
+                    required
+                    value={selectedBranch}
+                    onChange={(e) => setSelectedBranch(e.target.value)}
+                    className="w-full px-4 py-2.5 rounded-lg border border-gray-300 focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 outline-none transition-all appearance-none bg-white"
+                  >
+                    <option value="">Select Branch</option>
+                    {branches.map(branch => (
+                      <option key={branch} value={branch}>{branch}</option>
+                    ))}
+                  </select>
+                </div>
+              ) : (
+                <div className="mb-4 p-3 bg-gray-50 rounded-lg border border-gray-200">
+                  <p className="text-sm text-gray-600">Teacher will be assigned to: <span className="font-bold text-indigo-700">{admin.department}</span></p>
+                </div>
+              )}
 
               <div className="flex justify-end gap-3 mt-6">
                 <button

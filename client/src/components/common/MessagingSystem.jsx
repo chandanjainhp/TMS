@@ -2,7 +2,7 @@ import { useState, useEffect, useRef } from "react";
 import axios from "axios";
 import {
     Send, Search, Loader, MoreVertical,
-    ArrowLeft, MessageSquare, Paperclip, File as FileIcon // Added icons
+    ArrowLeft, MessageSquare, Paperclip, File as FileIcon, CheckCheck
 } from "lucide-react";
 import { format } from "date-fns";
 import toast from "react-hot-toast";
@@ -55,22 +55,30 @@ const MessagingSystem = () => {
         // Listen for real-time messages
         if (socket) {
             socket.on("newMessage", (newMessage) => {
-                // Determine if this message belongs to the active conversation
                 const isCurrentChat =
                     (newMessage.senderId === activeUserRef.current?._id) ||
                     (newMessage.senderId === myId && newMessage.recipientId === activeUserRef.current?._id);
 
                 if (isCurrentChat) {
                     setMessages(prev => [...prev, newMessage]);
-                    // Mark as read if window is open (implied)
+                    // If we are active in this chat, mark as read immediately
+                    if (newMessage.senderId !== myId) {
+                        markAsRead(newMessage._id, newMessage.senderId);
+                    }
                 }
+                loadData(true);
+            });
 
-                // Always refresh convo list to show unread count/new message snippet
+            // Listen for read receipts
+            socket.on("messageRead", (updatedMessage) => {
+                setMessages(prev => prev.map(m => m._id === updatedMessage._id ? updatedMessage : m));
+                // Also update conversation list if needed to show "Seen"
                 loadData(true);
             });
 
             return () => {
                 socket.off("newMessage");
+                socket.off("messageRead");
             };
         }
 
@@ -154,6 +162,27 @@ const MessagingSystem = () => {
             if (!silent) setLoading(false);
         }
     };
+
+    // Helper: Mark as Read
+    const markAsRead = async (messageId, senderId) => {
+        try {
+            await axios.put(`http://localhost:5000/api/messages/read/${messageId}`, {}, { withCredentials: true });
+            setMessages(prev => prev.map(m => m._id === messageId ? { ...m, status: 'read', isRead: true } : m));
+        } catch (err) {
+            console.error("Failed to mark as read", err);
+        }
+    };
+
+    // Effect to mark unread messages as read when viewing a conversation
+    useEffect(() => {
+        if (selectedUser && messages.length > 0) {
+            messages.forEach(msg => {
+                if (!msg.isRead && msg.recipientId === myId) {
+                    markAsRead(msg._id, msg.senderId);
+                }
+            });
+        }
+    }, [selectedUser, messages.length]);
 
     const handleSelectUser = async (user) => {
         setSelectedUser(user);
@@ -388,9 +417,14 @@ const MessagingSystem = () => {
                                                     )}
                                                     {msg.content}
                                                 </div>
-                                                <span className="text-[10px] text-gray-400 mt-1 px-1">
-                                                    {format(new Date(msg.createdAt), 'h:mm a')}
-                                                </span>
+                                                <div className="flex items-center gap-1 mt-1 justify-end w-full px-1">
+                                                    <span className="text-[10px] text-gray-400">
+                                                        {format(new Date(msg.createdAt), 'h:mm a')}
+                                                    </span>
+                                                    {isMe && (
+                                                        <CheckCheck className={`w-3 h-3 ${msg.status === 'read' || msg.isRead ? 'text-blue-500' : 'text-gray-300'}`} />
+                                                    )}
+                                                </div>
                                             </div>
                                         </div>
                                     );

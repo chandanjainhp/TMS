@@ -14,7 +14,10 @@ import {
   Scroll,
   BookOpenCheck,
   CalendarClock,
-  ClipboardList
+  ClipboardList,
+  GraduationCap,
+  BookOpen,
+  BookCopy
 } from 'lucide-react';
 
 const DepartmentUploadForm = () => {
@@ -58,6 +61,9 @@ const DepartmentUploadForm = () => {
   const branches = [
     'PMCS', 'BCA', 'PME', 'PCM'
   ];
+
+  const years = ['1', '2', '3'];
+  const semesters = ['1', '2', '3', '4', '5', '6'];
 
   // Dynamic Subjects State
   const [subjectList, setSubjectList] = useState([]);
@@ -223,8 +229,8 @@ const DepartmentUploadForm = () => {
         {/* Header - Simple & Clean */}
         <div className="flex flex-col md:flex-row md:items-end justify-between gap-4 border-b border-gray-100 pb-5">
           <div>
-            <h1 className="text-3xl font-bold text-gray-900 tracking-tight">Upload Records</h1>
-            <p className="text-gray-500 mt-1">Import class data and AI test results securely to the repository.</p>
+            <h1 className="text-3xl font-bold text-gray-900 tracking-tight">Score Entry</h1>
+            <p className="text-gray-500 mt-1">Record academic assessments and test scores into the ledger.</p>
           </div>
           <div className="hidden md:block text-right">
             <div className="text-xs font-mono text-gray-400">SESSION ID: {Math.random().toString(36).substr(2, 9).toUpperCase()}</div>
@@ -233,173 +239,179 @@ const DepartmentUploadForm = () => {
 
         <form onSubmit={handleSubmit} className="space-y-8">
 
-          {/* Main Form Grid - Row 1: Classification */}
-          <div className="grid grid-cols-1 md:grid-cols-4 gap-x-6 gap-y-6">
+          {/* SECTION 1: Academic Context */}
+          <div className="bg-gray-50/50 p-6 rounded-2xl border border-gray-100">
+            <h3 className="text-sm font-bold text-gray-900 uppercase tracking-wider mb-4 border-b border-gray-200 pb-2">
+              1. Academic Context
+            </h3>
 
-            <InputField label="Department" icon={Building2}>
-              <select
-                name="department"
-                value={formData.department}
-                onChange={handleChange}
-                className="w-full px-4 py-3 bg-gray-50 border border-gray-200 rounded-xl focus:ring-2 focus:ring-indigo-500 focus:border-transparent transition-all outline-none appearance-none font-medium text-gray-700"
-              >
-                <option value="">Select Dept</option>
-                {departments.map(d => <option key={d} value={d}>{d}</option>)}
-              </select>
-            </InputField>
-
-            <InputField label="Branch" icon={Network}>
-              <select
-                name="branch"
-                value={formData.branch}
-                onChange={handleChange}
-                className="w-full px-4 py-3 bg-gray-50 border border-gray-200 rounded-xl focus:ring-2 focus:ring-indigo-500 focus:border-transparent transition-all outline-none appearance-none font-medium text-gray-700"
-              >
-                <option value="">Select Branch</option>
-                {branches.map(b => <option key={b} value={b}>{b}</option>)}
-              </select>
-            </InputField>
-
-            <InputField label="Year" icon={CalendarRange}>
-              <select
-                name="year"
-                value={formData.year}
-                onChange={handleChange}
-                className="w-full px-4 py-3 bg-gray-50 border border-gray-200 rounded-xl focus:ring-2 focus:ring-indigo-500 focus:border-transparent transition-all outline-none appearance-none font-medium text-gray-700"
-              >
-                <option value="">Select Year</option>
-                {[1, 2, 3].map(y => <option key={y} value={y}>{y}</option>)}
-              </select>
-            </InputField>
-
-            <InputField label="Semester" icon={Scroll}>
-              <select
-                name="semester"
-                value={formData.semester}
-                onChange={handleChange}
-                className="w-full px-4 py-3 bg-gray-50 border border-gray-200 rounded-xl focus:ring-2 focus:ring-indigo-500 focus:border-transparent transition-all outline-none appearance-none font-medium text-gray-700"
-              >
-                <option value="">Select Sem</option>
-                {[1, 2, 3, 4, 5, 6].map(s => <option key={s} value={s}>{s}</option>)}
-              </select>
-            </InputField>
-          </div>
-
-          {/* Row 2: Subject Selection (depends on Branch + Semester) */}
-          <div className="grid grid-cols-1 md:grid-cols-4 gap-x-6 gap-y-6 mt-6">
-            <InputField label="Subject" icon={BookOpenCheck}>
-              <select
-                name="subject"
-                value={formData.subject}
-                onChange={(e) => {
-                  const selectedSubjName = e.target.value;
-                  const selectedSubjObj = subjectList.find(s => s.name === selectedSubjName);
-                  setFormData(prev => ({
-                    ...prev,
-                    subject: selectedSubjName,
-                    subSubject: ''
-                  }));
-                  if (selectedSubjObj && selectedSubjObj.subSubjects && selectedSubjObj.subSubjects.length > 0) {
-                    setSubSubjectOptions(selectedSubjObj.subSubjects);
-                  } else {
-                    setSubSubjectOptions([]);
-                  }
-                }}
-                disabled={loadingSubjects || subjectList.length === 0}
-                className="w-full px-4 py-3 bg-gray-50 border border-gray-200 rounded-xl focus:ring-2 focus:ring-indigo-500 focus:border-transparent transition-all outline-none appearance-none font-medium text-gray-700 disabled:opacity-50 disabled:cursor-not-allowed"
-              >
-                <option value="">{loadingSubjects ? "Loading..." : (!formData.branch || !formData.semester ? "Select Branch & Semester first" : "Select Subject")}</option>
-                {subjectList.map((subj, index) => (
-                  <option key={index} value={subj.name}>{subj.name}</option>
-                ))}
-              </select>
-            </InputField>
-
-            <InputField label="Sub-Subject" icon={Scroll}>
-              {subSubjectOptions.length > 0 ? (
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-5">
+              {/* Row 1 */}
+              <InputField label="Department" icon={Building2}>
                 <select
-                  name="subSubject"
-                  value={formData.subSubject}
+                  name="department"
+                  value={formData.department}
                   onChange={handleChange}
-                  className="w-full px-4 py-3 bg-gray-50 border border-gray-200 rounded-xl focus:ring-2 focus:ring-indigo-500 focus:border-transparent transition-all outline-none appearance-none font-medium text-gray-700"
+                  className="w-full px-4 py-3 bg-white border border-gray-200 rounded-xl focus:ring-2 focus:ring-indigo-500 focus:border-transparent transition-all outline-none appearance-none font-medium text-gray-700"
                 >
-                  <option value="">Select Sub-Subject</option>
-                  {subSubjectOptions.map((sub, index) => (
-                    <option key={index} value={sub}>{sub}</option>
-                  ))}
+                  <option value="">Select Dept</option>
+                  {departments.map(d => <option key={d} value={d}>{d}</option>)}
                 </select>
-              ) : (
+              </InputField>
+
+              <InputField label="Branch" icon={Network}>
+                <select
+                  name="branch"
+                  value={formData.branch}
+                  onChange={handleChange}
+                  className="w-full px-4 py-3 bg-white border border-gray-200 rounded-xl focus:ring-2 focus:ring-indigo-500 focus:border-transparent transition-all outline-none appearance-none font-medium text-gray-700"
+                >
+                  <option value="">Select Branch</option>
+                  {branches.map(b => <option key={b} value={b}>{b}</option>)}
+                </select>
+              </InputField>
+
+              <InputField label="Year" icon={CalendarRange}>
+                <select
+                  name="year"
+                  value={formData.year}
+                  onChange={handleChange}
+                  className="w-full px-4 py-3 bg-white border border-gray-200 rounded-xl focus:ring-2 focus:ring-indigo-500 focus:border-transparent transition-all outline-none appearance-none font-medium text-gray-700"
+                >
+                  <option value="">Select Year</option>
+                  {years.map(y => <option key={y} value={y}>{y}</option>)}
+                </select>
+              </InputField>
+
+              <InputField label="Semester" icon={GraduationCap}>
+                <select
+                  name="semester"
+                  value={formData.semester}
+                  onChange={handleChange}
+                  className="w-full px-4 py-3 bg-white border border-gray-200 rounded-xl focus:ring-2 focus:ring-indigo-500 focus:border-transparent transition-all outline-none appearance-none font-medium text-gray-700"
+                >
+                  <option value="">Select Sem</option>
+                  {semesters.map(s => <option key={s} value={s}>{s}</option>)}
+                </select>
+              </InputField>
+
+              {/* Row 2 */}
+              <InputField label="Subject" icon={BookOpen}>
+                {loadingSubjects ? (
+                  <div className="px-4 py-3 bg-gray-50 text-gray-400 rounded-xl border border-gray-200 text-sm">Loading...</div>
+                ) : (
+                  <select
+                    name="subject"
+                    value={formData.subject}
+                    onChange={(e) => {
+                      const selectedSubjName = e.target.value;
+                      const selectedSubjObj = subjectList.find(s => s.name === selectedSubjName);
+                      setFormData(prev => ({
+                        ...prev,
+                        subject: selectedSubjName,
+                        subSubject: ''
+                      }));
+                      if (selectedSubjObj && selectedSubjObj.subSubjects && selectedSubjObj.subSubjects.length > 0) {
+                        setSubSubjectOptions(selectedSubjObj.subSubjects);
+                      } else {
+                        setSubSubjectOptions([]);
+                      }
+                    }}
+                    disabled={!formData.branch || !formData.semester}
+                    className="w-full px-4 py-3 bg-white border border-gray-200 rounded-xl focus:ring-2 focus:ring-indigo-500 focus:border-transparent transition-all outline-none appearance-none font-medium text-gray-700 disabled:bg-gray-100 disabled:text-gray-400"
+                  >
+                    <option value="">
+                      {!formData.branch || !formData.semester
+                        ? "Select Branch & Sem first"
+                        : subjectList.length === 0 ? "No subjects found" : "Select Subject"}
+                    </option>
+                    {subjectList.map((subj, index) => <option key={index} value={subj.name}>{subj.name} ({subj.code})</option>)}
+                  </select>
+                )}
+              </InputField>
+
+              <InputField label="Section" icon={Users2}>
+                <select
+                  name="section"
+                  value={formData.section}
+                  onChange={handleChange}
+                  className="w-full px-4 py-3 bg-white border border-gray-200 rounded-xl focus:ring-2 focus:ring-indigo-500 focus:border-transparent transition-all outline-none appearance-none font-medium text-gray-700"
+                >
+                  <option value="">Select Section</option>
+                  {sections.map(s => <option key={s} value={s}>{s}</option>)}
+                </select>
+              </InputField>
+
+              <InputField label="Teacher Name" icon={UserCircle2}>
                 <input
                   type="text"
-                  name="subSubject"
-                  placeholder="Enter Sub-Subject"
-                  value={formData.subSubject || ''}
-                  onChange={handleChange}
-                  className="w-full px-4 py-3 bg-gray-50 border border-gray-200 rounded-xl focus:ring-2 focus:ring-indigo-500 focus:border-transparent transition-all outline-none font-medium text-gray-700"
+                  name="teacherName"
+                  value={formData.teacherName}
+                  readOnly
+                  className="w-full px-4 py-3 bg-gray-100 border border-gray-200 rounded-xl text-gray-500 cursor-not-allowed font-medium shadow-inner"
                 />
-              )}
-            </InputField>
+              </InputField>
 
-            <InputField label="Section" icon={Users2}>
-              <select
-                name="section"
-                value={formData.section}
-                onChange={handleChange}
-                className="w-full px-4 py-3 bg-gray-50 border border-gray-200 rounded-xl focus:ring-2 focus:ring-indigo-500 focus:border-transparent transition-all outline-none appearance-none font-medium text-gray-700"
-              >
-                <option value="">Section</option>
-                {sections.map(s => <option key={s} value={s}>{s}</option>)}
-              </select>
-            </InputField>
-
-            <InputField label="Teacher Name" icon={UserCircle2}>
-              <input
-                type="text"
-                name="teacherName"
-                placeholder="Dr. Smith"
-                value={formData.teacherName}
-                onChange={handleChange}
-                className="w-full px-4 py-3 bg-gray-50 border border-gray-200 rounded-xl focus:ring-2 focus:ring-indigo-500 focus:border-transparent transition-all outline-none font-medium text-gray-700"
-              />
-            </InputField>
-
-            <div className="flex gap-4">
-              <div className="flex-1">
-                <InputField label="Test Date" icon={CalendarClock}>
-                  <input
-                    type="date"
-                    name="aiTestDate"
-                    value={formData.aiTestDate}
-                    onChange={handleChange}
-                    className="w-full px-4 py-3 bg-gray-50 border border-gray-200 rounded-xl focus:ring-2 focus:ring-indigo-500 focus:border-transparent transition-all outline-none font-medium text-gray-700"
-                  />
-                </InputField>
-              </div>
-              <div className="flex-1">
-                <InputField label="Test Type" icon={ClipboardList}>
-                  <div className="flex bg-gray-100 p-1 rounded-xl h-[46px]">
-                    {['A1', 'A2'].map((type) => (
-                      <button
-                        key={type}
-                        type="button"
-                        onClick={() => setFormData(prev => ({ ...prev, testType: type }))}
-                        className={`flex-1 rounded-lg text-sm font-bold transition-all ${formData.testType === type
-                          ? 'bg-white text-indigo-600 shadow-sm'
-                          : 'text-gray-400 hover:text-gray-600'
-                          }`}
-                      >
-                        {type}
-                      </button>
-                    ))}
-                  </div>
-                </InputField>
-              </div>
+              <InputField label="Test Date" icon={CalendarClock}>
+                <input
+                  type="date"
+                  name="aiTestDate"
+                  value={formData.aiTestDate}
+                  onChange={handleChange}
+                  className="w-full px-4 py-3 bg-white border border-gray-200 rounded-xl focus:ring-2 focus:ring-indigo-500 focus:border-transparent transition-all outline-none font-medium text-gray-700"
+                />
+              </InputField>
             </div>
-
           </div>
 
+          {/* SECTION 2: Assessment Type */}
+          <div className="bg-white p-6 rounded-2xl border border-indigo-100 shadow-sm relative overflow-hidden">
+            <div className="absolute top-0 left-0 w-1 h-full bg-indigo-500"></div>
+            <h3 className="text-sm font-bold text-indigo-900 uppercase tracking-wider mb-4 flex items-center gap-2">
+              <ClipboardList className="w-4 h-4 text-indigo-500" />
+              2. Select Assessment Type
+            </h3>
+
+            <div className="flex flex-wrap gap-3">
+              {[
+                { id: 'A1', label: 'A1', sub: 'max 20' },
+                { id: 'A2', label: 'A2', sub: 'max 20' },
+                { id: 'Assignment', label: 'Assignment', sub: 'max 10' },
+                { id: 'Record', label: 'Record', sub: 'max 10' },
+                { id: 'Lab', label: 'Lab', sub: 'max 25' },
+                { id: 'Attendance', label: 'Attendance', sub: 'max 5' },
+                { id: 'EndSem', label: 'End Sem', sub: 'Final' }
+              ].map((type) => (
+                <button
+                  key={type.id}
+                  type="button"
+                  onClick={() => setFormData(prev => ({ ...prev, testType: type.id }))}
+                  className={`relative flex flex-col items-start justify-center p-4 rounded-xl border-2 transition-all duration-200 min-w-[120px] flex-1 text-left group ${formData.testType === type.id
+                    ? 'border-indigo-600 bg-indigo-50 text-indigo-900 shadow-md ring-1 ring-indigo-200'
+                    : 'border-gray-100 bg-white text-gray-600 hover:border-indigo-300 hover:bg-gray-50'
+                    }`}
+                >
+                  <span className={`text-base font-bold ${formData.testType === type.id ? 'text-indigo-700' : 'text-gray-800'}`}>
+                    {type.label}
+                  </span>
+                  <span className={`text-xs mt-1 ${formData.testType === type.id ? 'text-indigo-500 font-medium' : 'text-gray-400 group-hover:text-gray-500'}`}>
+                    {type.sub}
+                  </span>
+
+                  {formData.testType === type.id && (
+                    <div className="absolute top-2 right-2 text-indigo-600 bg-white rounded-full p-0.5 shadow-sm">
+                      <CheckCircle2 className="w-4 h-4" />
+                    </div>
+                  )}
+                </button>
+              ))}
+            </div>
+          </div>
+
+
+
           {/* Upload & Submit Section */}
-          <div className="grid grid-cols-1 lg:grid-cols-4 gap-6">
+          <div className="grid grid-cols-1 lg:grid-cols-4 gap-6 mt-6">
             <div className="lg:col-span-3">
               <div
                 className={`relative border-2 border-dashed rounded-2xl p-8 transition-all text-center cursor-pointer group ${dragActive
@@ -520,10 +532,13 @@ const DepartmentUploadForm = () => {
               <h4 className="font-bold text-lg">Success!</h4>
               <p className="text-emerald-100">Student records have been uploaded.</p>
             </div>
+            <a href="/repository" className="ml-2 bg-white/20 hover:bg-white/30 text-white px-3 py-1.5 rounded-lg text-sm font-bold transition-colors">
+              View
+            </a>
           </motion.div>
         )}
       </AnimatePresence>
-    </div>
+    </div >
   );
 };
 

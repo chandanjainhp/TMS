@@ -1,4 +1,4 @@
-import { Student } from "../models/Student.model.js";
+import { Student } from "../models/student.model.js";
 import { Parser } from "json2csv";
 import PDFDocument from "pdfkit";
 
