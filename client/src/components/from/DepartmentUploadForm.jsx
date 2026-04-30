@@ -80,7 +80,7 @@ const DepartmentUploadForm = () => {
 
       setLoadingSubjects(true);
       try {
-        const res = await axios.get(`http://localhost:5000/api/subjects?branch=${formData.branch}&semester=${formData.semester}`, { withCredentials: true });
+        const res = await axios.get(`/api/subjects?branch=${formData.branch}&semester=${formData.semester}`, { withCredentials: true });
         if (res.data.success) {
           // Store full subject objects
           if (res.data.data.length === 0) {
@@ -179,7 +179,7 @@ const DepartmentUploadForm = () => {
       });
 
       const response = await axios.post(
-        'http://localhost:5000/api/form',
+        '/api/form',
         formDataToSend,
         {
           withCredentials: true,

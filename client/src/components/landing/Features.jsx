@@ -1,134 +1,88 @@
-import { motion } from 'framer-motion';
-import {
-  BarChart3,
-  GraduationCap,
-  LayoutDashboard,
-  Settings,
-  Users,
-  Calendar,
-  ShieldCheck,
-  MessagesSquare
-} from 'lucide-react';
+import { BarChart3, GraduationCap, LayoutDashboard, MessageSquare, ShieldCheck, Users } from "lucide-react";
+
+const featureCards = [
+  {
+    title: "Academic ledger",
+    description: "Track marks, attendance, and progression in one structured timeline for every student.",
+    icon: Users,
+  },
+  {
+    title: "Teacher workspace",
+    description: "Give educators a focused environment for score entry, submissions, and class actions.",
+    icon: GraduationCap,
+  },
+  {
+    title: "Admin command center",
+    description: "Oversee curriculum, records, and faculty operations from a single view.",
+    icon: LayoutDashboard,
+  },
+  {
+    title: "Institution analytics",
+    description: "Monitor performance trends with fast, explainable reporting and visual summaries.",
+    icon: BarChart3,
+  },
+  {
+    title: "Secure collaboration",
+    description: "Keep communication and sensitive academic data protected with role-driven access.",
+    icon: ShieldCheck,
+  },
+  {
+    title: "Built-in messaging",
+    description: "Connect administration, teachers, and students without leaving your workspace.",
+    icon: MessageSquare,
+  },
+];
 
 export default function Features() {
-  const features = [
-    {
-      name: 'Student Management',
-      description: 'Comprehensive tracking of student records, attendance histories, and academic performance metrics.',
-      icon: <Users className="h-8 w-8 text-indigo-400" />,
-      color: 'bg-indigo-500/10 border-indigo-500/20'
-    },
-    {
-      name: 'Teacher Portal',
-      description: 'Dedicated workspace for educators to manage classes, grade assignments, and communicate effectively.',
-      icon: <GraduationCap className="h-8 w-8 text-violet-400" />,
-      color: 'bg-violet-500/10 border-violet-500/20'
-    },
-    {
-      name: 'Admin Dashboard',
-      description: 'Powerful analytical tools and controls to oversee institution operations and make data-driven decisions.',
-      icon: <LayoutDashboard className="h-8 w-8 text-blue-400" />,
-      color: 'bg-blue-500/10 border-blue-500/20'
-    },
-    {
-      name: 'Advanced Analytics',
-      description: 'Visualize performance trends and operational metrics with real-time interactive charts.',
-      icon: <BarChart3 className="h-8 w-8 text-emerald-400" />,
-      color: 'bg-emerald-500/10 border-emerald-500/20'
-    },
-    {
-      name: 'Secure Data',
-      description: 'Enterprise-grade security measures including encryption to protect sensitive student data.',
-      icon: <ShieldCheck className="h-8 w-8 text-rose-400" />,
-      color: 'bg-rose-500/10 border-rose-500/20'
-    },
-    {
-      name: 'Communication',
-      description: 'Integrated messaging system for seamless interaction between administration, teachers, and students.',
-      icon: <MessagesSquare className="h-8 w-8 text-amber-400" />,
-      color: 'bg-amber-500/10 border-amber-500/20'
-    },
-    {
-      name: 'Scheduling',
-      description: 'Smart automatic calendar and timetable management for classes, exams, and events.',
-      icon: <Calendar className="h-8 w-8 text-cyan-400" />,
-      color: 'bg-cyan-500/10 border-cyan-500/20'
-    },
-    {
-      name: 'Customizable Settings',
-      description: 'Tailor the system to your specific institutional needs with flexible configuration options.',
-      icon: <Settings className="h-8 w-8 text-slate-400" />,
-      color: 'bg-slate-500/10 border-slate-500/20'
-    }
-  ];
-
-  const containerVariants = {
-    hidden: { opacity: 0 },
-    visible: {
-      opacity: 1,
-      transition: {
-        staggerChildren: 0.1
-      }
-    }
-  };
-
-  const itemVariants = {
-    hidden: { opacity: 0, y: 30 },
-    visible: {
-      opacity: 1,
-      y: 0,
-      transition: {
-        duration: 0.6,
-        ease: "easeOut"
-      }
-    }
-  };
-
   return (
-    <div className="py-32 bg-slate-900 relative overflow-hidden" id="features">
-      {/* Background elements */}
-      <div className="absolute top-0 left-0 w-full h-full overflow-hidden z-0 pointer-events-none">
-        <div className="absolute top-[20%] right-[5%] w-[40%] h-[40%] rounded-full bg-indigo-900/20 blur-[100px]" />
-        <div className="absolute bottom-[10%] left-[5%] w-[30%] h-[30%] rounded-full bg-purple-900/20 blur-[100px]" />
-      </div>
+    <>
+      <section className="notion-section bg-[#f6f5f4]" id="features">
+        <div className="notion-container">
+          <div className="max-w-3xl">
+            <span className="notion-badge mb-4">Core capabilities</span>
+            <h2 className="notion-h2">A complete operating system for your academic institution.</h2>
+            <p className="notion-body mt-4 max-w-2xl">
+              TMS follows a content-first model: compact data, clear hierarchy, and calm visuals that help teams execute without noise.
+            </p>
+          </div>
 
-      <div className="w-full px-6 sm:px-12 lg:px-16 mx-auto relative z-10">
-        <div className="mb-24 md:text-center max-w-3xl mx-auto">
-          <p className="text-indigo-400 font-semibold tracking-wider uppercase mb-3">Core Capabilities</p>
-          <h2 className="text-4xl md:text-5xl font-bold text-white mb-6 leading-tight">
-            Everything you need to run your institution
-          </h2>
-          <p className="text-xl text-slate-400 leading-relaxed">
-            A complete ecosystem of tools designed to modernize educational management and streamline your daily operations.
-          </p>
+          <div className="mt-10 grid gap-5 sm:grid-cols-2 lg:grid-cols-3">
+            {featureCards.map(({ title, description, icon: Icon }) => (
+              <article key={title} className="notion-card p-6 transition-shadow hover:shadow-[rgba(0,0,0,0.05)_0px_8px_24px]">
+                <div className="mb-4 inline-flex rounded-full bg-[#f2f9ff] p-2 text-[#097fe8]">
+                  <Icon size={18} />
+                </div>
+                <h3 className="text-[22px] font-bold leading-[1.27] tracking-[-0.25px] text-[rgba(0,0,0,0.95)]">{title}</h3>
+                <p className="mt-2 text-base leading-[1.5] text-[#615d59]">{description}</p>
+              </article>
+            ))}
+          </div>
         </div>
+      </section>
 
-        <motion.div
-          variants={containerVariants}
-          initial="hidden"
-          whileInView="visible"
-          viewport={{ once: true, margin: "-50px" }}
-          className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-8"
-        >
-          {features.map((feature, index) => (
-            <motion.div
-              key={index}
-              variants={itemVariants}
-              className="group relative bg-white/5 backdrop-blur-sm p-8 rounded-3xl border border-white/5 hover:border-indigo-500/30 hover:bg-white/10 transition-all duration-300 hover:-translate-y-2"
-            >
-              <div className={`inline-flex items-center justify-center p-3 rounded-2xl ${feature.color} mb-6 transition-transform group-hover:scale-110 duration-500`}>
-                {feature.icon}
+      <section className="notion-section bg-white">
+        <div className="notion-container">
+          <div className="grid gap-6 lg:grid-cols-[1fr_1.2fr]">
+            <div className="notion-card p-8">
+              <p className="text-[12px] font-semibold uppercase tracking-[0.125px] text-[#097fe8]">Measured impact</p>
+              <p className="mt-4 text-[40px] font-bold leading-[1.2] text-[rgba(0,0,0,0.95)]">$4,200 ROI</p>
+              <p className="mt-3 text-[#615d59]">Average annual productivity gain per department after migrating manual grade workflows to TMS.</p>
+            </div>
+            <div className="notion-card overflow-hidden">
+              <div className="border-b border-[rgba(0,0,0,0.1)] bg-[#f6f5f4] p-5">
+                <h3 className="text-[22px] font-bold tracking-[-0.25px] text-[rgba(0,0,0,0.95)]">Trusted by modern education teams</h3>
               </div>
-              <h3 className="text-xl font-bold text-white mb-3 group-hover:text-indigo-300 transition-colors">
-                {feature.name}
-              </h3>
-              <p className="text-slate-400 leading-relaxed text-base">
-                {feature.description}
-              </p>
-            </motion.div>
-          ))}
-        </motion.div>
-      </div>
-    </div>
+              <div className="grid grid-cols-2 gap-3 p-5 sm:grid-cols-3">
+                {["Westview", "Northgate", "Riverbend", "Cedar Hill", "St. Mark", "Summit"].map((name) => (
+                  <div key={name} className="rounded border border-[rgba(0,0,0,0.1)] bg-white p-3 text-center text-sm font-semibold text-[#31302e]">
+                    {name}
+                  </div>
+                ))}
+              </div>
+            </div>
+          </div>
+        </div>
+      </section>
+    </>
   );
 }

@@ -6,9 +6,9 @@ import Footer from "../components/landing/Footer";
 
 export default function LandingPage() {
   return (
-    <div className="relative min-h-screen bg-slate-900 flex flex-col overflow-x-hidden text-white font-sans">
+    <div className="min-h-screen overflow-x-hidden bg-white">
       <Navbar />
-      <div className="flex-grow">
+      <main>
         <section id="hero">
           <Hero />
         </section>
@@ -18,7 +18,7 @@ export default function LandingPage() {
         <section id="cta">
           <CTA />
         </section>
-      </div>
+      </main>
       <Footer />
     </div>
   );

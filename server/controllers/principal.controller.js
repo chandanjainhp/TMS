@@ -1,5 +1,5 @@
 import xlsx from "xlsx";
-import { Student } from "../models/Student.model.js";
+import { Student } from "../models/student.model.js";
 import { User } from "../models/user.model.js";
 
 // Helper to normalize keys
@@ -95,6 +95,76 @@ export const uploadMasterList = async (req, res) => {
     } catch (error) {
         console.error("Master Upload Error:", error);
         res.status(500).json({ success: false, message: "Error processing Excel file", error: error.message });
+    }
+};
+
+export const getAdminUsers = async (req, res) => {
+    try {
+        const admins = await User.find({
+            role: { $in: ['admin', 'hod', 'principal', 'superAdmin'] }
+        }).select('-password').sort({ createdAt: -1 });
+
+        res.status(200).json({ success: true, admins });
+    } catch (error) {
+        console.error("getAdminUsers error:", error);
+        res.status(500).json({ success: false, message: "Error fetching admin users" });
+    }
+};
+
+export const createHOD = async (req, res) => {
+    try {
+        const { name, email, password, department } = req.body;
+
+        if (!name || !email || !password || !department) {
+            return res.status(400).json({ success: false, message: "All fields required" });
+        }
+
+        const existing = await User.findOne({ email });
+        if (existing) {
+            return res.status(400).json({ success: false, message: "Email already registered" });
+        }
+
+        const bcryptjs = (await import("bcryptjs")).default;
+        const hashedPassword = await bcryptjs.hash(password, 10);
+
+        const hod = new User({
+            name,
+            email,
+            password: hashedPassword,
+            role: 'hod',
+            department,
+            isVerified: true,
+        });
+
+        await hod.save();
+
+        res.status(201).json({
+            success: true,
+            message: "HOD account created",
+            admin: { id: hod._id, name: hod.name, email: hod.email, department: hod.department, role: hod.role }
+        });
+    } catch (error) {
+        console.error("createHOD error:", error);
+        res.status(500).json({ success: false, message: "Error creating HOD account" });
+    }
+};
+
+export const deleteAdminUser = async (req, res) => {
+    try {
+        const { id } = req.params;
+
+        const user = await User.findById(id);
+        if (!user) return res.status(404).json({ success: false, message: "User not found" });
+
+        if (user.role === 'principal' && req.user._id.toString() === id) {
+            return res.status(400).json({ success: false, message: "Cannot delete your own account" });
+        }
+
+        await User.findByIdAndDelete(id);
+        res.status(200).json({ success: true, message: "Account deleted" });
+    } catch (error) {
+        console.error("deleteAdminUser error:", error);
+        res.status(500).json({ success: false, message: "Error deleting user" });
     }
 };
 

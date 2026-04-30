@@ -6,115 +6,68 @@ import Input from "../components/login/Input";
 import { useAuthStore } from "../store/authStore";
 
 const LoginPage = () => {
-	const [email, setEmail] = useState("");
-	const [password, setPassword] = useState("");
+  const [email, setEmail] = useState("");
+  const [password, setPassword] = useState("");
+  const { login, isLoading, error } = useAuthStore();
 
-	const { login, isLoading, error } = useAuthStore();
+  const handleLogin = async (e) => {
+    e.preventDefault();
+    await login(email, password);
+  };
 
-	const handleLogin = async (e) => {
-		e.preventDefault();
-		await login(email, password);
-	};
+  return (
+    <div className="min-h-screen bg-[#f6f5f4] p-4 sm:p-8">
+      <div className="mx-auto grid min-h-[calc(100vh-2rem)] w-full max-w-[1200px] overflow-hidden rounded border border-[rgba(0,0,0,0.1)] bg-white shadow-[rgba(0,0,0,0.04)_0px_4px_18px] lg:grid-cols-2">
+        <div className="hidden border-r border-[rgba(0,0,0,0.1)] bg-[#f6f5f4] p-10 lg:flex lg:flex-col lg:justify-between">
+          <Link to="/landing" className="inline-flex items-center gap-2 text-[15px] font-medium text-[rgba(0,0,0,0.95)] no-underline hover:text-[#0075de]">
+            <ArrowLeft size={16} /> Back to home
+          </Link>
+          <div>
+            <span className="notion-badge">User portal</span>
+            <h1 className="mt-5 text-[54px] font-bold leading-[1.04] tracking-[-1.875px] text-[rgba(0,0,0,0.95)]">Sign in with clarity.</h1>
+            <p className="mt-4 max-w-md text-[#615d59]">
+              Access your institution workspace to manage records, submissions, and communication in one place.
+            </p>
+          </div>
+        </div>
 
-	return (
-		<div className='min-h-screen flex bg-white font-sans'>
-			{/* Left Side - Image/Branding */}
-			<div className='hidden lg:flex lg:w-1/2 relative overflow-hidden bg-slate-900'>
-				<div className='absolute inset-0 bg-gradient-to-br from-indigo-600/30 to-purple-600/30 z-10' />
-				<img
-					src="https://images.unsplash.com/photo-1497294815431-9365093b7331?ixlib=rb-1.2.1&auto=format&fit=crop&w=1950&q=80"
-					alt="Office"
-					className='absolute inset-0 w-full h-full object-cover opacity-50'
-				/>
-				<div className='relative z-20 flex flex-col justify-between h-full p-16 text-white'>
-					<div>
-						<Link to="/" className="inline-flex items-center space-x-2 text-white/80 hover:text-white transition-colors">
-							<ArrowLeft className="h-5 w-5" />
-							<span>Back to Home</span>
-						</Link>
-					</div>
-					<div>
-						<h1 className='text-5xl font-bold mb-6 leading-tight'>Welcome to the <br />Future of Education</h1>
-						<p className='text-xl text-indigo-100 max-w-md'>Streamline your institution's management with our advanced, secure, and intuitive platform.</p>
-					</div>
-				</div>
-			</div>
+        <div className="flex items-center justify-center p-6 sm:p-10">
+          <div className="w-full max-w-md">
+            <img src="/logo.png" alt="TMS" className="mb-6 h-10 w-auto rounded border border-[rgba(0,0,0,0.1)] bg-white p-1" />
+            <h2 className="text-[40px] font-bold leading-[1.1] tracking-[-1px] text-[rgba(0,0,0,0.95)]">Welcome back</h2>
+            <p className="mt-2 text-[#615d59]">Enter your credentials to continue.</p>
 
-			{/* Right Side - Form */}
-			<div className='w-full lg:w-1/2 flex items-center justify-center p-8 sm:p-12 lg:p-24 bg-white'>
-				<div className='w-full max-w-md space-y-8'>
-					<div className='text-center lg:text-left'>
-						<img src="/logo.png" alt="TMS" className="h-12 w-auto mb-6 mx-auto lg:mx-0" />
-						<h2 className='text-4xl font-bold text-gray-900 tracking-tight'>Sign in</h2>
-						<p className='mt-2 text-gray-600'>Please enter your details to access your account.</p>
-					</div>
+            <form onSubmit={handleLogin} className="mt-8">
+              <Input icon={Mail} type="email" placeholder="Email address" value={email} onChange={(e) => setEmail(e.target.value)} />
+              <Input icon={Lock} type="password" placeholder="Password" value={password} onChange={(e) => setPassword(e.target.value)} />
+              <div className="mb-6 flex justify-end">
+                <Link to="/forgot-password" className="text-sm font-medium no-underline hover:text-[#005bab]">
+                  Forgot password?
+                </Link>
+              </div>
 
-					<form onSubmit={handleLogin} className='mt-8 space-y-6'>
-						<div className='space-y-4'>
-							<Input
-								icon={Mail}
-								type='email'
-								placeholder='Email Address'
-								value={email}
-								onChange={(e) => setEmail(e.target.value)}
-							/>
+              {error && (
+                <motion.div initial={{ opacity: 0, y: -8 }} animate={{ opacity: 1, y: 0 }} className="mb-4 rounded border border-[#f5c2c2] bg-[#fff5f5] p-3 text-sm text-[#dd5b00]">
+                  {error}
+                </motion.div>
+              )}
 
-							<Input
-								icon={Lock}
-								type='password'
-								placeholder='Password'
-								value={password}
-								onChange={(e) => setPassword(e.target.value)}
-							/>
-						</div>
+              <motion.button whileTap={{ scale: 0.97 }} type="submit" disabled={isLoading} className="notion-btn-primary w-full">
+                {isLoading ? <Loader className="mx-auto size-5 animate-spin" /> : "Sign in"}
+              </motion.button>
+            </form>
 
-						<div className='flex items-center justify-between'>
-							<Link to='/forgot-password' className='text-sm font-medium text-indigo-600 hover:text-indigo-500 transition-colors'>
-								Forgot password?
-							</Link>
-						</div>
-
-						{error && (
-							<motion.div
-								initial={{ opacity: 0, y: -10 }}
-								animate={{ opacity: 1, y: 0 }}
-								className='p-4 rounded-lg bg-red-50 text-red-500 text-sm font-medium border border-red-100'
-							>
-								{error}
-							</motion.div>
-						)}
-
-						<motion.button
-							whileHover={{ scale: 1.01 }}
-							whileTap={{ scale: 0.99 }}
-							className='w-full py-4 px-4 bg-slate-900 text-white font-bold rounded-xl shadow-lg hover:bg-slate-800 transition-all duration-200 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-slate-900'
-							type='submit'
-							disabled={isLoading}
-						>
-							{isLoading ? <Loader className='w-6 h-6 animate-spin mx-auto' /> : "Sign In"}
-						</motion.button>
-					</form>
-
-					<div className="relative">
-						<div className="absolute inset-0 flex items-center">
-							<div className="w-full border-t border-gray-200"></div>
-						</div>
-						<div className="relative flex justify-center text-sm">
-							<span className="px-2 bg-white text-gray-500">New to TSM?</span>
-						</div>
-					</div>
-
-					<div className='flex flex-col gap-4 text-center'>
-						<Link
-							to='/signup'
-							className='w-full py-4 px-4 bg-white text-slate-900 font-bold rounded-xl border-2 border-slate-100 hover:border-slate-300 hover:bg-slate-50 transition-all duration-200'
-						>
-							Create an account
-						</Link>
-					</div>
-				</div>
-			</div>
-		</div>
-	);
+            <p className="mt-6 text-center text-sm text-[#615d59]">
+              New to TMS?{" "}
+              <Link to="/signup" className="font-semibold no-underline hover:text-[#005bab]">
+                Create account
+              </Link>
+            </p>
+          </div>
+        </div>
+      </div>
+    </div>
+  );
 };
+
 export default LoginPage;

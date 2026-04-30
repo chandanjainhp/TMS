@@ -96,9 +96,9 @@ const MessagingSystem = () => {
         try {
             // Fetch everything in parallel
             const [usersRes, inboxRes, sentRes] = await Promise.all([
-                axios.get(`http://localhost:5000/api/messages/users?query=`, { withCredentials: true }),
-                axios.get(`http://localhost:5000/api/messages/inbox`, { withCredentials: true }),
-                axios.get(`http://localhost:5000/api/messages/sent`, { withCredentials: true })
+                axios.get(`/api/messages/users?query=`, { withCredentials: true }),
+                axios.get(`/api/messages/inbox`, { withCredentials: true }),
+                axios.get(`/api/messages/sent`, { withCredentials: true })
             ]);
 
             const allContacts = usersRes.data.success ? usersRes.data.data : [];
@@ -166,7 +166,7 @@ const MessagingSystem = () => {
     // Helper: Mark as Read
     const markAsRead = async (messageId, senderId) => {
         try {
-            await axios.put(`http://localhost:5000/api/messages/read/${messageId}`, {}, { withCredentials: true });
+            await axios.put(`/api/messages/read/${messageId}`, {}, { withCredentials: true });
             setMessages(prev => prev.map(m => m._id === messageId ? { ...m, status: 'read', isRead: true } : m));
         } catch (err) {
             console.error("Failed to mark as read", err);
@@ -196,7 +196,7 @@ const MessagingSystem = () => {
 
         setSending(true);
         try {
-            const res = await axios.post("http://localhost:5000/api/messages/send", {
+            const res = await axios.post("/api/messages/send", {
                 recipientId: selectedUser._id,
                 subject: "Chat",
                 content: messageInput || (attachment ? "Sent an attachment" : ""),
@@ -230,7 +230,7 @@ const MessagingSystem = () => {
         formData.append("file", file);
 
         try {
-            const res = await axios.post("http://localhost:5000/api/messages/upload", formData, {
+            const res = await axios.post("/api/messages/upload", formData, {
                 headers: { "Content-Type": "multipart/form-data" },
                 withCredentials: true
             });
@@ -404,7 +404,7 @@ const MessagingSystem = () => {
                                                             {msg.attachments.map((file, i) => (
                                                                 <a
                                                                     key={i}
-                                                                    href={`http://localhost:5000${file.fileUrl}`}
+                                                                    href={file.fileUrl}
                                                                     target="_blank"
                                                                     rel="noreferrer"
                                                                     className={`flex items-center gap-2 p-2 rounded text-xs ${isMe ? 'bg-indigo-500 text-white/90' : 'bg-gray-100 text-gray-700'} hover:opacity-90 transition`}

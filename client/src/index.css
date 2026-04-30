@@ -2,6 +2,151 @@
 @tailwind components;
 @tailwind utilities;
 
+:root {
+  --color-bg: #ffffff;
+  --color-bg-alt: #f6f5f4;
+  --color-text: rgba(0, 0, 0, 0.95);
+  --color-text-secondary: #615d59;
+  --color-text-muted: #a39e98;
+  --color-border: rgba(0, 0, 0, 0.1);
+  --color-blue: #0075de;
+  --color-blue-active: #005bab;
+  --color-focus: #097fe8;
+  --color-badge-bg: #f2f9ff;
+  --color-badge-text: #097fe8;
+  --shadow-card: rgba(0, 0, 0, 0.04) 0px 4px 18px,
+    rgba(0, 0, 0, 0.027) 0px 2.025px 7.84688px,
+    rgba(0, 0, 0, 0.02) 0px 0.8px 2.925px,
+    rgba(0, 0, 0, 0.01) 0px 0.175px 1.04062px;
+}
+
 html {
   scroll-behavior: smooth;
+}
+
+body {
+  margin: 0;
+  background: var(--color-bg);
+  color: var(--color-text);
+  font-family: NotionInter, Inter, -apple-system, system-ui, "Segoe UI", Helvetica,
+    Arial, "Apple Color Emoji", "Segoe UI Emoji", "Segoe UI Symbol", sans-serif;
+}
+
+h1,
+h2,
+h3,
+h4 {
+  color: var(--color-text);
+  font-feature-settings: "lnum", "locl";
+}
+
+a {
+  color: var(--color-blue);
+}
+
+a:hover {
+  text-decoration: underline;
+}
+
+button:focus-visible,
+a:focus-visible,
+input:focus-visible,
+select:focus-visible,
+textarea:focus-visible {
+  outline: 2px solid var(--color-focus);
+  outline-offset: 2px;
+}
+
+@layer components {
+  .notion-container {
+    @apply mx-auto w-full max-w-[1200px] px-4 sm:px-6 lg:px-8;
+  }
+
+  .notion-section {
+    @apply py-16 md:py-20;
+  }
+
+  .notion-display {
+    color: var(--color-text);
+    font-weight: 700;
+    line-height: 1;
+    letter-spacing: -2.125px;
+    font-size: clamp(2.5rem, 6vw, 4rem);
+    font-feature-settings: "lnum", "locl";
+  }
+
+  .notion-h2 {
+    color: var(--color-text);
+    font-weight: 700;
+    line-height: 1;
+    letter-spacing: -1.5px;
+    font-size: clamp(2rem, 4.5vw, 3rem);
+    font-feature-settings: "lnum", "locl";
+  }
+
+  .notion-body-lg {
+    color: var(--color-text-secondary);
+    font-size: 1.25rem;
+    line-height: 1.4;
+    font-weight: 600;
+    letter-spacing: -0.125px;
+  }
+
+  .notion-body {
+    color: var(--color-text-secondary);
+    font-size: 1rem;
+    line-height: 1.5;
+  }
+
+  .notion-card {
+    @apply rounded-xl bg-white;
+    border: 1px solid var(--color-border);
+    box-shadow: var(--shadow-card);
+  }
+
+  .notion-badge {
+    @apply inline-flex items-center rounded-full px-2 py-1;
+    background: var(--color-badge-bg);
+    color: var(--color-badge-text);
+    font-size: 12px;
+    font-weight: 600;
+    letter-spacing: 0.125px;
+    line-height: 1.33;
+  }
+
+  .notion-btn-primary {
+    @apply inline-flex items-center justify-center rounded px-4 py-2 font-semibold transition-all;
+    font-size: 15px;
+    line-height: 1.33;
+    background: var(--color-blue);
+    color: #fff;
+    border: 1px solid transparent;
+  }
+
+  .notion-btn-primary:hover {
+    background: var(--color-blue-active);
+    text-decoration: none;
+  }
+
+  .notion-btn-primary:active {
+    transform: scale(0.97);
+  }
+
+  .notion-btn-secondary {
+    @apply inline-flex items-center justify-center rounded px-4 py-2 font-semibold transition-all;
+    font-size: 15px;
+    line-height: 1.33;
+    background: rgba(0, 0, 0, 0.05);
+    color: var(--color-text);
+    border: 1px solid transparent;
+  }
+
+  .notion-btn-secondary:hover {
+    transform: scale(1.03);
+    text-decoration: none;
+  }
+
+  .notion-btn-secondary:active {
+    transform: scale(0.97);
+  }
 }

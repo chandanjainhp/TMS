@@ -1,163 +1,300 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { Link } from "react-router-dom";
-import { Upload, FileText, MessageSquare, Menu, X, LogOut, Settings, ClipboardList, Book } from "lucide-react";
+import {
+  LayoutDashboard, BookOpen, MessageSquare, Settings, LogOut,
+  Upload, FileText, ClipboardList, ChevronRight, Menu, X,
+  BarChart2, Users, Loader2,
+} from "lucide-react";
+import axios from "axios";
 import MessagingSystem from "../components/common/MessagingSystem";
+import TeacherClasses from "../components/teacher/TeacherClasses";
+import TeacherAnalytics from "../components/teacher/TeacherAnalytics";
 import { useAuthStore } from "../store/authStore";
 
-const TeacherDashboardPage = () => {
-    const { user, logout } = useAuthStore();
-    const [activeTab, setActiveTab] = useState("home");
-    const [sidebarOpen, setSidebarOpen] = useState(false);
+const NAV = [
+  { id: "home",      label: "Home",      icon: LayoutDashboard },
+  { id: "classes",   label: "My Classes", icon: BookOpen        },
+  { id: "analytics", label: "Analytics",  icon: BarChart2       },
+  { id: "messages",  label: "Messages",   icon: MessageSquare   },
+];
 
-    const quickActions = [
-        { id: "score-entry", label: "Score Entry", icon: Upload, link: "/score-entry", color: "bg-indigo-600" },
-        { id: "academic-ledger", label: "Academic Ledger", icon: Book, link: "/academic-ledger", color: "bg-violet-600" },
-        { id: "records", label: "View Batches", icon: ClipboardList, link: "/records", color: "bg-emerald-600" },
-        { id: "messages", label: "Messages", icon: MessageSquare, action: () => setActiveTab("messages"), color: "bg-blue-600" },
-        { id: "submission-history", label: "Submission History", icon: FileText, link: "/submission-history", color: "bg-orange-600" },
-    ];
+const QUICK_ACTIONS = [
+  { label: "Score Entry",        icon: Upload,      link: "/score-entry",         accent: "#0075de" },
+  { label: "Academic Ledger",    icon: BookOpen,    link: "/academic-ledger",      accent: "#097fe8" },
+  { label: "View Records",       icon: ClipboardList, link: "/records",           accent: "#2a9d99" },
+  { label: "Submission History", icon: FileText,    link: "/submission-history",   accent: "#391c57" },
+];
 
-    const sidebarItems = [
-        { id: "home", label: "Home" },
-        { id: "messages", label: "Messages" },
-    ];
+/* ── Sidebar (shared desktop + mobile) ──────────────────────────────── */
+function SidebarContent({ activeTab, setActiveTab, user, logout, onNavigate }) {
+  const initials = user?.name
+    ? user.name.split(" ").map((w) => w[0]).join("").slice(0, 2).toUpperCase()
+    : "T";
 
-    return (
-        <div className="min-h-screen bg-gray-50 flex font-sans">
-            {/* Sidebar Desktop */}
-            <aside className="hidden md:flex flex-col w-56 bg-white border-r border-gray-200">
-                <div className="p-5 border-b border-gray-200">
-                    <img src="/logo.png" alt="TMS" className="h-8 w-auto" />
-                    <span className="text-xs text-gray-400 ml-2">Teacher</span>
-                </div>
+  const handleTab = (id) => {
+    setActiveTab(id);
+    onNavigate?.();
+  };
 
-                <nav className="flex-1 p-3 space-y-1">
-                    {sidebarItems.map((item) => (
-                        <button
-                            key={item.id}
-                            onClick={() => setActiveTab(item.id)}
-                            className={`flex items-center w-full px-3 py-2.5 rounded-lg text-sm transition-all ${activeTab === item.id
-                                ? "bg-indigo-50 text-indigo-600 font-semibold"
-                                : "text-gray-600 hover:bg-gray-50"
-                                }`}
-                        >
-                            {item.label}
-                        </button>
-                    ))}
-
-                    <Link
-                        to="/settings"
-                        className="flex items-center w-full px-3 py-2.5 rounded-lg text-sm text-gray-600 hover:bg-gray-50 transition-all"
-                    >
-                        <Settings className="w-4 h-4 mr-2" />
-                        Settings
-                    </Link>
-                </nav>
-
-                <div className="p-3 border-t border-gray-200">
-                    <button
-                        onClick={logout}
-                        className="flex items-center w-full px-3 py-2.5 text-red-500 hover:bg-red-50 rounded-lg text-sm transition-colors"
-                    >
-                        <LogOut className="w-4 h-4 mr-2" />
-                        Sign Out
-                    </button>
-                </div>
-            </aside>
-
-            {/* Mobile Header */}
-            <div className="md:hidden fixed top-0 w-full bg-white border-b border-gray-200 z-20 flex justify-between items-center p-4">
-                <img src="/logo.png" alt="TMS" className="h-8 w-auto" />
-                <button onClick={() => setSidebarOpen(!sidebarOpen)} className="p-2">
-                    {sidebarOpen ? <X size={20} /> : <Menu size={20} />}
-                </button>
-            </div>
-
-            {/* Mobile Sidebar Overlay */}
-            {sidebarOpen && (
-                <>
-                    <div className="md:hidden fixed inset-0 bg-black/50 z-30" onClick={() => setSidebarOpen(false)} />
-                    <div className="md:hidden fixed top-0 left-0 w-64 h-full bg-white z-40 p-4">
-                        <div className="mb-6">
-                            <img src="/logo.png" alt="TMS" className="h-8 w-auto mb-2" />
-                        </div>
-                        <nav className="space-y-1">
-                            {sidebarItems.map((item) => (
-                                <button
-                                    key={item.id}
-                                    onClick={() => { setActiveTab(item.id); setSidebarOpen(false); }}
-                                    className={`flex items-center w-full px-3 py-2.5 rounded-lg text-sm ${activeTab === item.id
-                                        ? "bg-indigo-50 text-indigo-600 font-semibold"
-                                        : "text-gray-600"
-                                        }`}
-                                >
-                                    {item.label}
-                                </button>
-                            ))}
-                            <Link to="/settings" className="flex items-center w-full px-3 py-2.5 rounded-lg text-sm text-gray-600">
-                                <Settings className="w-4 h-4 mr-2" /> Settings
-                            </Link>
-                        </nav>
-                        <button onClick={logout} className="mt-8 flex items-center px-3 py-2.5 text-red-500 text-sm">
-                            <LogOut className="w-4 h-4 mr-2" /> Sign Out
-                        </button>
-                    </div>
-                </>
-            )}
-
-            {/* Main Content */}
-            <main className="flex-1 p-4 md:p-6 pt-20 md:pt-6 overflow-y-auto">
-                {activeTab === "home" ? (
-                    <div className="max-w-4xl mx-auto space-y-6">
-                        {/* Welcome */}
-                        <div className="bg-white rounded-xl p-6 border border-gray-200 shadow-sm">
-                            <h1 className="text-2xl font-bold text-gray-900">Welcome, {user?.name || "Teacher"}</h1>
-                            <p className="text-gray-500 text-sm mt-1">What would you like to do today?</p>
-                        </div>
-
-                        {/* Quick Actions */}
-                        <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-                            {quickActions.map((action) => (
-                                action.link ? (
-                                    <Link
-                                        key={action.id}
-                                        to={action.link}
-                                        className="bg-white rounded-xl p-5 border border-gray-200 shadow-sm hover:shadow-md transition-all text-center group"
-                                    >
-                                        <div className={`w-12 h-12 ${action.color} rounded-xl flex items-center justify-center mx-auto mb-3 group-hover:scale-105 transition-transform`}>
-                                            <action.icon className="w-6 h-6 text-white" />
-                                        </div>
-                                        <span className="text-sm font-medium text-gray-700">{action.label}</span>
-                                    </Link>
-                                ) : (
-                                    <button
-                                        key={action.id}
-                                        onClick={action.action}
-                                        className="bg-white rounded-xl p-5 border border-gray-200 shadow-sm hover:shadow-md transition-all text-center group"
-                                    >
-                                        <div className={`w-12 h-12 ${action.color} rounded-xl flex items-center justify-center mx-auto mb-3 group-hover:scale-105 transition-transform`}>
-                                            <action.icon className="w-6 h-6 text-white" />
-                                        </div>
-                                        <span className="text-sm font-medium text-gray-700">{action.label}</span>
-                                    </button>
-                                )
-                            ))}
-                        </div>
-
-                        {/* Simple Info Card */}
-                        <div className="bg-indigo-50 rounded-xl p-5 border border-indigo-100">
-                            <h3 className="font-semibold text-indigo-900 mb-1">Need Help?</h3>
-                            <p className="text-indigo-700 text-sm">Contact your administrator for support or training.</p>
-                        </div>
-                    </div>
-                ) : activeTab === "messages" ? (
-                    <div className="max-w-5xl mx-auto">
-                        <MessagingSystem />
-                    </div>
-                ) : null}
-            </main>
+  return (
+    <div className="flex h-full flex-col">
+      {/* Logo */}
+      <div className="flex h-14 flex-shrink-0 items-center gap-2 border-b border-[rgba(0,0,0,0.08)] px-4">
+        <img
+          src="/logo.png"
+          alt="TMS"
+          className="h-7 w-auto rounded border border-[rgba(0,0,0,0.1)] bg-white px-1"
+        />
+        <div>
+          <p className="text-[13px] font-bold leading-none text-[rgba(0,0,0,0.95)]">TMS</p>
+          <p className="text-[10px] text-[#a39e98]">Teacher Portal</p>
         </div>
-    );
+      </div>
+
+      {/* Nav */}
+      <nav className="flex-1 overflow-y-auto px-2 py-3">
+        <p className="mb-2 px-2.5 text-[10px] font-semibold uppercase tracking-[0.125px] text-[#a39e98]">
+          Navigation
+        </p>
+        <ul className="space-y-0.5">
+          {NAV.map(({ id, label, icon: Icon }) => (
+            <li key={id}>
+              <button
+                onClick={() => handleTab(id)}
+                className={`flex w-full items-center gap-2.5 rounded px-2.5 py-2 text-sm font-medium transition-all ${
+                  activeTab === id
+                    ? "bg-[#f2f9ff] text-[#097fe8]"
+                    : "text-[rgba(0,0,0,0.75)] hover:bg-[#f6f5f4] hover:text-[rgba(0,0,0,0.95)]"
+                }`}
+              >
+                <Icon size={15} className="flex-shrink-0" />
+                {label}
+              </button>
+            </li>
+          ))}
+        </ul>
+
+        <div className="mt-3 border-t border-[rgba(0,0,0,0.06)] pt-3">
+          <p className="mb-2 px-2.5 text-[10px] font-semibold uppercase tracking-[0.125px] text-[#a39e98]">
+            Tools
+          </p>
+          {QUICK_ACTIONS.map(({ label, icon: Icon, link, accent }) => (
+            <Link
+              key={link}
+              to={link}
+              className="flex items-center gap-2.5 rounded px-2.5 py-2 text-sm font-medium text-[rgba(0,0,0,0.75)] no-underline transition-all hover:bg-[#f6f5f4] hover:text-[rgba(0,0,0,0.95)]"
+            >
+              <Icon size={14} className="flex-shrink-0" style={{ color: accent }} />
+              {label}
+            </Link>
+          ))}
+        </div>
+      </nav>
+
+      {/* Footer */}
+      <div className="border-t border-[rgba(0,0,0,0.08)] p-2">
+        <Link
+          to="/settings"
+          className="flex items-center gap-2.5 rounded px-2.5 py-2 text-sm font-medium text-[rgba(0,0,0,0.75)] no-underline transition-colors hover:bg-[#f6f5f4]"
+        >
+          <Settings size={14} className="flex-shrink-0" />
+          Settings
+        </Link>
+
+        <div className="mt-1.5 flex items-center gap-2.5 rounded px-2.5 py-2">
+          <div className="flex h-7 w-7 flex-shrink-0 items-center justify-center rounded-full bg-[#f2f9ff] text-[11px] font-bold text-[#097fe8]">
+            {initials}
+          </div>
+          <div className="min-w-0 flex-1">
+            <p className="truncate text-xs font-semibold text-[rgba(0,0,0,0.95)]">{user?.name || "Teacher"}</p>
+            <p className="truncate text-[10px] text-[#a39e98]">{user?.department || "Instructor"}</p>
+          </div>
+        </div>
+
+        <button
+          onClick={logout}
+          className="flex w-full items-center gap-2.5 rounded px-2.5 py-2 text-sm font-medium text-[#dd5b00] transition-colors hover:bg-[#fff5f2]"
+        >
+          <LogOut size={14} className="flex-shrink-0" />
+          Sign Out
+        </button>
+      </div>
+    </div>
+  );
+}
+
+/* ── Home tab ───────────────────────────────────────────────────────── */
+function HomeTab({ user, setActiveTab }) {
+  const [classCount, setClassCount] = useState(null);
+
+  useEffect(() => {
+    axios
+      .get("/api/teacher/my-classes", { withCredentials: true })
+      .then((r) => { if (r.data.success) setClassCount(r.data.classes?.length ?? 0); })
+      .catch(() => {});
+  }, []);
+
+  return (
+    <div className="space-y-5">
+      {/* Welcome card */}
+      <div className="rounded-xl border border-[rgba(0,0,0,0.1)] bg-white p-6 shadow-[rgba(0,0,0,0.04)_0px_4px_18px]">
+        <span className="notion-badge mb-3">Active session</span>
+        <h1 className="text-[28px] font-bold leading-tight tracking-[-0.5px] text-[rgba(0,0,0,0.95)]">
+          Welcome back, {user?.name?.split(" ")[0] || "Teacher"}
+        </h1>
+        <p className="mt-1 text-sm text-[#615d59]">
+          {user?.department ? `${user.department} Department` : "Instructor"} · What would you like to do today?
+        </p>
+      </div>
+
+      {/* Stats row */}
+      <div className="grid grid-cols-2 gap-3 sm:grid-cols-3">
+        <div className="flex items-center justify-between rounded-xl border border-[rgba(0,0,0,0.1)] bg-white p-4 shadow-[rgba(0,0,0,0.04)_0px_4px_18px]">
+          <div>
+            <p className="text-[10px] font-semibold uppercase tracking-[0.125px] text-[#a39e98]">My Classes</p>
+            <p className="mt-1 text-2xl font-bold leading-none text-[rgba(0,0,0,0.95)]">
+              {classCount === null ? <Loader2 size={16} className="animate-spin text-[#097fe8]" /> : classCount}
+            </p>
+          </div>
+          <div className="flex h-9 w-9 items-center justify-center rounded-lg bg-[#f2f9ff] text-[#097fe8]">
+            <BookOpen size={16} />
+          </div>
+        </div>
+
+        <button
+          onClick={() => setActiveTab("classes")}
+          className="flex items-center justify-between rounded-xl border border-[rgba(0,0,0,0.1)] bg-white p-4 shadow-[rgba(0,0,0,0.04)_0px_4px_18px] transition-all hover:bg-[#f6f5f4]"
+        >
+          <div className="text-left">
+            <p className="text-[10px] font-semibold uppercase tracking-[0.125px] text-[#a39e98]">View Classes</p>
+            <p className="mt-1 text-xs font-semibold text-[#0075de]">Open →</p>
+          </div>
+          <div className="flex h-9 w-9 items-center justify-center rounded-lg bg-[#f0fdf4] text-[#1aae39]">
+            <Users size={16} />
+          </div>
+        </button>
+
+        <button
+          onClick={() => setActiveTab("analytics")}
+          className="flex items-center justify-between rounded-xl border border-[rgba(0,0,0,0.1)] bg-white p-4 shadow-[rgba(0,0,0,0.04)_0px_4px_18px] transition-all hover:bg-[#f6f5f4]"
+        >
+          <div className="text-left">
+            <p className="text-[10px] font-semibold uppercase tracking-[0.125px] text-[#a39e98]">Analytics</p>
+            <p className="mt-1 text-xs font-semibold text-[#0075de]">Open →</p>
+          </div>
+          <div className="flex h-9 w-9 items-center justify-center rounded-lg bg-[#fff7ed] text-[#dd5b00]">
+            <BarChart2 size={16} />
+          </div>
+        </button>
+      </div>
+
+      {/* Quick actions grid */}
+      <div>
+        <p className="mb-3 text-[10px] font-semibold uppercase tracking-[0.125px] text-[#a39e98]">Quick Actions</p>
+        <div className="grid grid-cols-2 gap-3 sm:grid-cols-4">
+          {QUICK_ACTIONS.map(({ label, icon: Icon, link, accent }) => (
+            <Link
+              key={link}
+              to={link}
+              className="group flex flex-col items-center gap-2 rounded-xl border border-[rgba(0,0,0,0.1)] bg-white p-5 text-center no-underline shadow-[rgba(0,0,0,0.04)_0px_4px_18px] transition-all hover:bg-[#f6f5f4] hover:shadow-[rgba(0,0,0,0.08)_0px_8px_24px]"
+            >
+              <div
+                className="flex h-11 w-11 items-center justify-center rounded-xl transition-transform group-hover:scale-105"
+                style={{ background: accent }}
+              >
+                <Icon className="h-5 w-5 text-white" />
+              </div>
+              <span className="text-xs font-semibold text-[rgba(0,0,0,0.95)]">{label}</span>
+              <ChevronRight size={12} className="text-[#a39e98]" />
+            </Link>
+          ))}
+        </div>
+      </div>
+    </div>
+  );
+}
+
+/* ── Page ───────────────────────────────────────────────────────────── */
+const TeacherDashboardPage = () => {
+  const { user, logout } = useAuthStore();
+  const [activeTab, setActiveTab]   = useState("home");
+  const [mobileOpen, setMobileOpen] = useState(false);
+
+  const TAB_LABELS = { home: "Home", classes: "My Classes", analytics: "Analytics", messages: "Messages" };
+
+  return (
+    <div className="flex h-screen overflow-hidden bg-[#f6f5f4]">
+
+      {/* ── Desktop sidebar ── */}
+      <aside className="hidden w-[216px] flex-shrink-0 flex-col border-r border-[rgba(0,0,0,0.1)] bg-white shadow-[rgba(0,0,0,0.02)_2px_0px_8px] md:flex">
+        <SidebarContent
+          activeTab={activeTab}
+          setActiveTab={setActiveTab}
+          user={user}
+          logout={logout}
+        />
+      </aside>
+
+      {/* ── Mobile sidebar overlay ── */}
+      {mobileOpen && (
+        <>
+          <div
+            className="fixed inset-0 z-40 bg-black/30 backdrop-blur-sm md:hidden"
+            onClick={() => setMobileOpen(false)}
+          />
+          <aside className="fixed inset-y-0 left-0 z-50 flex w-64 flex-col border-r border-[rgba(0,0,0,0.1)] bg-white shadow-[rgba(0,0,0,0.05)_4px_0px_24px] md:hidden">
+            <SidebarContent
+              activeTab={activeTab}
+              setActiveTab={setActiveTab}
+              user={user}
+              logout={logout}
+              onNavigate={() => setMobileOpen(false)}
+            />
+          </aside>
+        </>
+      )}
+
+      {/* ── Main ── */}
+      <div className="flex min-w-0 flex-1 flex-col overflow-hidden">
+
+        {/* Top bar */}
+        <header className="flex h-14 flex-shrink-0 items-center justify-between border-b border-[rgba(0,0,0,0.1)] bg-white px-4 sm:px-6">
+          <div className="flex items-center gap-3">
+            <button
+              className="rounded border border-[rgba(0,0,0,0.1)] p-1.5 text-[#615d59] transition-colors hover:bg-[#f6f5f4] md:hidden"
+              onClick={() => setMobileOpen(true)}
+            >
+              <Menu size={18} />
+            </button>
+            <div className="hidden sm:block">
+              <p className="text-[11px] font-medium text-[#a39e98]">Teacher Portal</p>
+              <p className="text-sm font-semibold text-[rgba(0,0,0,0.95)]">{TAB_LABELS[activeTab]}</p>
+            </div>
+          </div>
+
+          <div className="flex items-center gap-2">
+            <div className="hidden text-right sm:block">
+              <p className="text-xs font-semibold leading-none text-[rgba(0,0,0,0.95)]">{user?.name}</p>
+              <p className="mt-0.5 text-[10px] text-[#615d59]">{user?.department || "Instructor"}</p>
+            </div>
+            <div className="flex h-7 w-7 items-center justify-center rounded-full border border-[rgba(0,0,0,0.1)] bg-[#f2f9ff] text-[11px] font-bold text-[#097fe8]">
+              {user?.name?.split(" ").map((w) => w[0]).join("").slice(0, 2).toUpperCase() || "T"}
+            </div>
+          </div>
+        </header>
+
+        {/* Content */}
+        <main className="flex-1 overflow-x-hidden overflow-y-auto">
+          <div className="mx-auto w-full max-w-[1100px] px-4 py-5 sm:px-6 lg:px-8">
+            {activeTab === "home"      && <HomeTab user={user} setActiveTab={setActiveTab} />}
+            {activeTab === "classes"   && <TeacherClasses />}
+            {activeTab === "analytics" && <TeacherAnalytics />}
+            {activeTab === "messages"  && <MessagingSystem />}
+          </div>
+        </main>
+      </div>
+    </div>
+  );
 };
 
 export default TeacherDashboardPage;

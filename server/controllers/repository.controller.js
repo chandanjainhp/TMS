@@ -1,4 +1,4 @@
-import { Student } from '../models/Student.model.js';
+import { Student } from '../models/student.model.js';
 import { User } from '../models/user.model.js';
 
 // Get Class Repository (Scoped for Teachers/Admins)

@@ -1,13 +1,13 @@
 import { User } from "../models/user.model.js";
 
+const ADMIN_ROLES = ['admin', 'hod', 'principal', 'superAdmin'];
+
 // Get all users (admin only)
 export const getAllUsers = async (req, res) => {
   try {
-    // Check if the requesting user is an admin
-    // Use req.user if available (from verifyToken/isAdmin), otherwise fetch
-    const requestingUser = req.user || await User.findById(req.userId);
+    const requestingUser = req.user;
 
-    if (!requestingUser || requestingUser.role !== 'admin') {
+    if (!requestingUser || !ADMIN_ROLES.includes(requestingUser.role)) {
       return res.status(403).json({
         success: false,
         message: "Access denied. Admin privileges required."
@@ -99,9 +99,8 @@ export const getUserById = async (req, res) => {
 // Get user stats (admin only)
 export const getUserStats = async (req, res) => {
   try {
-    // Check if the requesting user is an admin
-    const requestingUser = req.user || await User.findById(req.userId);
-    if (!requestingUser || requestingUser.role !== 'admin') {
+    const requestingUser = req.user;
+    if (!requestingUser || !ADMIN_ROLES.includes(requestingUser.role)) {
       return res.status(403).json({
         success: false,
         message: "Access denied. Admin privileges required."

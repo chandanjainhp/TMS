@@ -1,16 +1,14 @@
 import express from 'express';
 import { getSubjects, createSubject, deleteSubject } from '../controllers/subject.controller.js';
-import { verifyToken } from '../middleware/verifyToken.js';
+import { verifyToken, isAdmin } from '../middleware/verifyToken.js';
 
 const router = express.Router();
 
-// Get subjects (with optional branch/semester filters)
+// Any authenticated user can view subjects
 router.get('/', verifyToken, getSubjects);
 
-// Create a new subject
-router.post('/', verifyToken, createSubject);
-
-// Delete a subject
-router.delete('/:id', verifyToken, deleteSubject);
+// Admin-only: create and delete
+router.post('/', verifyToken, isAdmin, createSubject);
+router.delete('/:id', verifyToken, isAdmin, deleteSubject);
 
 export default router;

@@ -18,7 +18,7 @@ const TeacherAnnouncements = () => {
 
     const fetchAnnouncements = async () => {
         try {
-            const response = await axios.get("http://localhost:5000/api/teacher/announcements", { withCredentials: true });
+            const response = await axios.get("/api/teacher/announcements", { withCredentials: true });
             if (response.data.success) {
                 setAnnouncements(response.data.data);
             }
@@ -36,7 +36,7 @@ const TeacherAnnouncements = () => {
     const handleSubmit = async (e) => {
         e.preventDefault();
         try {
-            const response = await axios.post("http://localhost:5000/api/teacher/announcements", newAnnouncement, { withCredentials: true });
+            const response = await axios.post("/api/teacher/announcements", newAnnouncement, { withCredentials: true });
             if (response.data.success) {
                 toast.success("Announcement posted!");
                 setNewAnnouncement({ title: "", content: "", department: "", section: "", subject: "" });

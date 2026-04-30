@@ -1,18 +1,14 @@
 import express from "express";
-import { verifyToken } from "../middleware/verifyToken.js";
-import { getMyClasses } from "../controllers/teacher.controller.js";
+import { verifyToken, isAdmin } from "../middleware/verifyToken.js";
+import { getMyClasses, createTeacher, getDepartmentTeachers } from "../controllers/teacher.controller.js";
 
 const router = express.Router();
 
-// All routes require login
-router.use(verifyToken);
+// Teacher-only: view own classes
+router.get("/my-classes", verifyToken, getMyClasses);
 
-router.get("/my-classes", getMyClasses);
-// router.post("/announcements", createAnnouncement);
-// router.get("/announcements", getMyAnnouncements);
-
-import { createTeacher, getDepartmentTeachers } from "../controllers/teacher.controller.js";
-router.post("/create", createTeacher);
-router.get("/list", getDepartmentTeachers);
+// Admin-only: manage faculty
+router.post("/create", verifyToken, isAdmin, createTeacher);
+router.get("/list", verifyToken, isAdmin, getDepartmentTeachers);
 
 export default router;

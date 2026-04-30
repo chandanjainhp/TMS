@@ -10,8 +10,10 @@ import SettingsPage from "./pages/SettingsPage";
 import { Toaster } from "react-hot-toast";
 import { useAuthStore } from "./store/authStore";
 import { useAdminAuthStore } from "./store/adminAuthStore";
-import { useEffect } from "react";
+import { useState, useEffect } from "react";
+import axios from "axios";
 import { useSocketStore } from "./store/socketStore";
+import SetupPage from "./pages/SetupPage";
 import LandingPage from "./pages/LandingPage";
 import Header from "./components/common/Header";
 import SessionTimeoutTracker from "./components/common/SessionTimeoutTracker";
@@ -35,6 +37,9 @@ import MessagingPage from "./pages/MessagingPage";
 import AdminMessagesPage from "./pages/AdminMessagesPage";
 import TeacherDashboardPage from "./pages/TeacherDashboardPage";
 import PrincipalDashboardPage from "./pages/PrincipalDashboardPage";
+import FacultyDirectoryPage from "./pages/FacultyDirectoryPage";
+import StudentMasterPage from "./pages/StudentMasterPage";
+import PrincipalSystemSettingsPage from "./pages/PrincipalSystemSettingsPage";
 import {
   AboutPage, FeaturesPage, PricingPage, SecurityPage,
   DocumentationPage, GuidesPage, SupportPage,
@@ -132,6 +137,24 @@ function App() {
   const { isCheckingAuth, checkAuth, user } = useAuthStore();
   const { checkAuth: checkAdminAuth, admin } = useAdminAuthStore();
   const { connectSocket, disconnectSocket } = useSocketStore();
+  const [setupComplete, setSetupComplete] = useState(null);
+
+  useEffect(() => {
+    const checkSetupStatus = async () => {
+      try {
+        const res = await axios.get('/api/setup/check-setup');
+        setSetupComplete(res.data.setupComplete);
+
+        if (!res.data.setupComplete && window.location.pathname !== '/setup') {
+          window.location.href = '/setup';
+        }
+      } catch (err) {
+        console.error("Setup check failed", err);
+        setSetupComplete(true);
+      }
+    };
+    checkSetupStatus();
+  }, []);
   const location = useLocation();
 
   const currentUser = admin || user;
@@ -162,6 +185,7 @@ function App() {
 
   // Define routes that don't require the header
   const noHeaderRoutes = [
+    "/setup",
     "/login",
     "/signup",
     "/verify-email",
@@ -174,6 +198,10 @@ function App() {
     "/admin",
     "/results",
     "/teacher-dashboard",
+    "/principal",
+    "/principal/faculty",
+    "/principal/students",
+    "/principal/settings",
     "/about", "/features", "/pricing", "/security",
     "/docs", "/guides", "/support",
     "/blog", "/careers", "/privacy", "/terms"
@@ -184,7 +212,7 @@ function App() {
     location.pathname.startsWith(route)
   );
 
-  if (isCheckingAuth) return <LoadingSpinner />;
+  if (isCheckingAuth || setupComplete === null) return <LoadingSpinner />;
 
   return (
     <div className="min-h-screen bg-white text-gray-900">
@@ -333,6 +361,10 @@ function App() {
 
           {/* Authentication routes */}
           <Route
+            path="/setup"
+            element={!setupComplete ? <SetupPage /> : <Navigate to="/login" replace />}
+          />
+          <Route
             path="/signup"
             element={
               <RedirectAuthenticatedUser>
@@ -384,6 +416,30 @@ function App() {
             element={
               <AdminRoute>
                 <PrincipalDashboardPage />
+              </AdminRoute>
+            }
+          />
+          <Route
+            path="/principal/faculty"
+            element={
+              <AdminRoute>
+                <FacultyDirectoryPage />
+              </AdminRoute>
+            }
+          />
+          <Route
+            path="/principal/students"
+            element={
+              <AdminRoute>
+                <StudentMasterPage />
+              </AdminRoute>
+            }
+          />
+          <Route
+            path="/principal/settings"
+            element={
+              <AdminRoute>
+                <PrincipalSystemSettingsPage />
               </AdminRoute>
             }
           />

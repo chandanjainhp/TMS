@@ -18,7 +18,7 @@ const StudentData = () => {
   useEffect(() => {
     const fetchStudents = async () => {
       try {
-        const response = await axios.get("http://localhost:5000/api/students/students");
+        const response = await axios.get("/api/students/students");
         const apiData = response.data;
 
         const formattedStudents = apiData.map((student, index) => {

@@ -2,11 +2,10 @@ import RecordsList from '../components/records/RecordsList';
 
 const RecordsPage = () => {
     return (
-      <div className="h-screen flex flex-col relative z-10 bg-white">
-        {/* Scrollable content area */}
+      <div className="relative z-10 flex min-h-[calc(100vh-4rem)] flex-col bg-[#f6f5f4]">
         <main className="flex-1 overflow-y-auto">
-          <div className="max-w-7xl mx-auto py-6 px-4 lg:px-8 text-gray-800">
-            <div className="bg-white p-6 rounded-lg shadow-md border border-gray-200 flex flex-col items-center">
+          <div className="mx-auto max-w-[1200px] px-4 py-6 text-gray-800">
+            <div className="flex flex-col items-center rounded-xl border border-[rgba(0,0,0,0.1)] bg-white p-6 shadow-[rgba(0,0,0,0.04)_0px_4px_18px]">
               <RecordsList />
             </div>
           </div>

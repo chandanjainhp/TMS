@@ -22,7 +22,7 @@ const TeacherStatus = () => {
         setLoading(true);
 
         // Fetch users
-        const response = await axios.get('http://localhost:5000/api/users', {
+        const response = await axios.get('/api/users', {
           withCredentials: true
         });
 
@@ -31,7 +31,7 @@ const TeacherStatus = () => {
           setError(null);
 
           // Fetch user stats
-          const statsResponse = await axios.get('http://localhost:5000/api/users/stats', {
+          const statsResponse = await axios.get('/api/users/stats', {
             withCredentials: true
           });
 

@@ -2,14 +2,13 @@ import StudentData from '../components/student/StudentData';
 
 const StudentPage = () => {
   return (
-    <div className="h-screen flex flex-col relative z-10 bg-indigo-50">
-      {/* Scrollable content area */}
-      <main className="flex-1 overflow-y-auto bg-white rounded-lg shadow-md">
-        <div className="max-w-7xl mx-auto py-6 px-4 lg:px-8 text-[#FFFFFF]">
+    <div className="h-screen flex flex-col relative z-10 bg-[#f6f5f4]">
+      <main className="flex-1 overflow-y-auto bg-white rounded border border-[rgba(0,0,0,0.1)] shadow-[rgba(0,0,0,0.04)_0px_4px_18px]">
+        <div className="max-w-7xl mx-auto py-6 px-4 lg:px-8">
           <div
             style={{
-              backgroundColor: '#34495E',
-              color: '#FFFFFF',
+              backgroundColor: '#f6f5f4',
+              color: '#37352F',
               minHeight: 'calc(100vh - 96px)', // Adjust for header height
               padding: '24px',
             }}

@@ -1,123 +1,128 @@
-import { useState, useEffect } from 'react';
-import { Link, useLocation } from 'react-router-dom';
-import { Menu, X, School } from 'lucide-react';
-import { motion, AnimatePresence } from 'framer-motion';
+import { useState } from "react";
+import { Link } from "react-router-dom";
+import { ChevronDown, Menu, X } from "lucide-react";
+
+const productGroups = [
+  {
+    label: "Academic Operations",
+    items: [
+      { name: "Score Entry", to: "/score-entry" },
+      { name: "Academic Ledger", to: "/academic-ledger" },
+      { name: "Submission History", to: "/submission-history" },
+    ],
+  },
+  {
+    label: "Institution Management",
+    items: [
+      { name: "Admin Dashboard", to: "/admin" },
+      { name: "Teacher Dashboard", to: "/teacher-dashboard" },
+      { name: "Messaging", to: "/messages" },
+    ],
+  },
+];
 
 export default function Navbar() {
-  const [isScrolled, setIsScrolled] = useState(false);
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
-  const location = useLocation();
-
-  useEffect(() => {
-    const handleScroll = () => {
-      setIsScrolled(window.scrollY > 20);
-    };
-    window.addEventListener('scroll', handleScroll);
-    return () => window.removeEventListener('scroll', handleScroll);
-  }, []);
-
-  const navLinks = [
-    { name: 'Features', to: '#features' }, // We can handle smooth scroll or route later
-    { name: 'Admin', to: '/admin-login' },
-    { name: 'Login', to: '/login' },
-  ];
+  const [isProductOpen, setIsProductOpen] = useState(false);
 
   return (
-    <nav
-      className={`fixed top-0 left-0 right-0 z-50 transition-all duration-500 ${isScrolled
-        ? 'bg-slate-900/80 backdrop-blur-xl border-b border-white/10 py-2'
-        : 'bg-transparent py-6'
-        }`}
-    >
-      <div className="w-full px-6 sm:px-12 lg:px-16 mx-auto">
-        <div className="flex justify-between items-center h-20">
-          {/* Logo */}
-          <Link to="/" className="flex items-center space-x-3 group">
-            <img src="/logo.png" alt="TMS" className="h-10 w-auto bg-white rounded p-1" />
+    <nav className="border-b border-[rgba(0,0,0,0.1)] bg-white">
+      <div className="notion-container">
+        <div className="flex min-h-[72px] items-center justify-between">
+          <Link to="/landing" className="flex items-center gap-3 text-[rgba(0,0,0,0.95)] no-underline">
+            <img src="/logo.png" alt="TMS" className="h-8 w-auto rounded border border-[rgba(0,0,0,0.1)] bg-white p-1" />
+            <span className="text-[15px] font-semibold">TMS</span>
           </Link>
 
-          {/* Desktop Navigation */}
-          <div className="hidden md:flex items-center space-x-12">
-            <Link
-              to="/results"
-              className="text-slate-300 hover:text-white font-medium transition-colors text-lg"
+          <div className="hidden items-center gap-6 md:flex">
+            <div
+              className="relative"
+              onMouseEnter={() => setIsProductOpen(true)}
+              onMouseLeave={() => setIsProductOpen(false)}
             >
-              Check Result
+              <button
+                type="button"
+                className="inline-flex items-center gap-1 text-[15px] font-medium text-[rgba(0,0,0,0.95)] hover:text-[#0075de]"
+              >
+                Product
+                <ChevronDown size={16} />
+              </button>
+              {isProductOpen && (
+                <div className="absolute left-0 top-full z-20 mt-3 grid w-[540px] grid-cols-2 gap-4 rounded-xl border border-[rgba(0,0,0,0.1)] bg-white p-4 shadow-[rgba(0,0,0,0.04)_0px_4px_18px]">
+                  {productGroups.map((group) => (
+                    <div key={group.label}>
+                      <p className="mb-2 text-xs font-semibold uppercase tracking-[0.125px] text-[#615d59]">
+                        {group.label}
+                      </p>
+                      <div className="space-y-1">
+                        {group.items.map((item) => (
+                          <Link
+                            key={item.name}
+                            to={item.to}
+                            className="block rounded px-2 py-1.5 text-[15px] text-[rgba(0,0,0,0.95)] no-underline hover:bg-[#f6f5f4]"
+                          >
+                            {item.name}
+                          </Link>
+                        ))}
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              )}
+            </div>
+
+            <Link to="/features" className="text-[15px] font-medium text-[rgba(0,0,0,0.95)] no-underline hover:text-[#0075de]">
+              Features
             </Link>
-            <Link
-              to="/admin-login"
-              className="text-slate-300 hover:text-white font-medium transition-colors text-lg"
-            >
-              Admin Portal
+            <Link to="/pricing" className="text-[15px] font-medium text-[rgba(0,0,0,0.95)] no-underline hover:text-[#0075de]">
+              Pricing
             </Link>
-            <Link
-              to="/login"
-              className="text-slate-300 hover:text-white font-medium transition-colors text-lg"
-            >
-              Login
+            <Link to="/docs" className="text-[15px] font-medium text-[rgba(0,0,0,0.95)] no-underline hover:text-[#0075de]">
+              Docs
             </Link>
-            <Link
-              to="/signup"
-              className="px-8 py-3 rounded-full bg-white text-slate-900 font-bold hover:bg-gray-100 transition-all transform hover:scale-105 shadow-xl hover:shadow-2xl"
-            >
-              Get Started
+            <Link to="/login" className="text-[15px] font-medium text-[rgba(0,0,0,0.95)] no-underline hover:text-[#0075de]">
+              Log in
+            </Link>
+            <Link to="/signup" className="notion-btn-primary no-underline">
+              Get started
             </Link>
           </div>
 
-          {/* Mobile Menu Button */}
-          <div className="md:hidden">
-            <button
-              onClick={() => setIsMobileMenuOpen(!isMobileMenuOpen)}
-              className="p-2 rounded-md text-slate-300 hover:text-white transition-colors"
-            >
-              {isMobileMenuOpen ? <X className="h-8 w-8" /> : <Menu className="h-8 w-8" />}
-            </button>
-          </div>
+          <button
+            type="button"
+            className="rounded border border-[rgba(0,0,0,0.1)] p-2 text-[rgba(0,0,0,0.95)] md:hidden"
+            onClick={() => setIsMobileMenuOpen((prev) => !prev)}
+            aria-label="Toggle navigation menu"
+          >
+            {isMobileMenuOpen ? <X size={20} /> : <Menu size={20} />}
+          </button>
         </div>
       </div>
 
-      {/* Mobile Menu */}
-      <AnimatePresence>
-        {isMobileMenuOpen && (
-          <motion.div
-            initial={{ opacity: 0, height: 0 }}
-            animate={{ opacity: 1, height: 'auto' }}
-            exit={{ opacity: 0, height: 0 }}
-            className="md:hidden bg-slate-900/95 border-b border-white/10 backdrop-blur-xl overflow-hidden"
-          >
-            <div className="px-6 pt-4 pb-8 space-y-4">
-              <Link
-                to="/results"
-                className="block px-4 py-3 rounded-xl text-lg font-medium text-slate-300 hover:text-white hover:bg-white/5"
-                onClick={() => setIsMobileMenuOpen(false)}
-              >
-                Check Result
-              </Link>
-              <Link
-                to="/admin-login"
-                className="block px-4 py-3 rounded-xl text-lg font-medium text-slate-300 hover:text-white hover:bg-white/5"
-                onClick={() => setIsMobileMenuOpen(false)}
-              >
-                Admin Portal
-              </Link>
-              <Link
-                to="/login"
-                className="block px-4 py-3 rounded-xl text-lg font-medium text-slate-300 hover:text-white hover:bg-white/5"
-                onClick={() => setIsMobileMenuOpen(false)}
-              >
-                Login
-              </Link>
-              <Link
-                to="/signup"
-                className="block w-full text-center mt-6 px-8 py-4 rounded-full bg-indigo-600 text-white font-bold hover:bg-indigo-500 shadow-lg"
-                onClick={() => setIsMobileMenuOpen(false)}
-              >
-                Get Started
-              </Link>
-            </div>
-          </motion.div>
-        )}
-      </AnimatePresence>
+      {isMobileMenuOpen && (
+        <div className="border-t border-[rgba(0,0,0,0.1)] bg-white md:hidden">
+          <div className="notion-container space-y-2 py-3">
+            <Link to="/features" className="block rounded px-2 py-2 text-[15px] text-[rgba(0,0,0,0.95)] no-underline hover:bg-[#f6f5f4]">
+              Features
+            </Link>
+            <Link to="/pricing" className="block rounded px-2 py-2 text-[15px] text-[rgba(0,0,0,0.95)] no-underline hover:bg-[#f6f5f4]">
+              Pricing
+            </Link>
+            <Link to="/docs" className="block rounded px-2 py-2 text-[15px] text-[rgba(0,0,0,0.95)] no-underline hover:bg-[#f6f5f4]">
+              Docs
+            </Link>
+            <Link to="/admin-login" className="block rounded px-2 py-2 text-[15px] text-[rgba(0,0,0,0.95)] no-underline hover:bg-[#f6f5f4]">
+              Admin portal
+            </Link>
+            <Link to="/login" className="block rounded px-2 py-2 text-[15px] text-[rgba(0,0,0,0.95)] no-underline hover:bg-[#f6f5f4]">
+              Log in
+            </Link>
+            <Link to="/signup" className="notion-btn-primary mt-2 w-full no-underline text-center">
+              Get started
+            </Link>
+          </div>
+        </div>
+      )}
     </nav>
   );
 }

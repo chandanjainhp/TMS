@@ -64,7 +64,7 @@ const FormDataViewer = () => {
         Object.entries(filters).filter(([_, v]) => v)
       );
 
-      const response = await axios.get('http://localhost:5000/api/form/records', { params });
+      const response = await axios.get('/api/form/records', { params });
       if (response.data.success) {
         setRecords(response.data.data);
         setError(null);
@@ -93,7 +93,7 @@ const FormDataViewer = () => {
     if (!window.confirm('Delete this record irreversibly?')) return;
     try {
       setLoading(true);
-      const res = await axios.delete(`http://localhost:5000/api/form/records/${id}`);
+      const res = await axios.delete(`/api/form/records/${id}`);
       if (res.data.success) {
         setRecords(prev => prev.filter(r => r._id !== id));
       }
@@ -172,7 +172,7 @@ const FormDataViewer = () => {
         csvData: finalCsvData
       };
 
-      const response = await axios.put(`http://localhost:5000/api/form/records/${editingRecord._id}`, payload);
+      const response = await axios.put(`/api/form/records/${editingRecord._id}`, payload);
 
       if (response.data.success) {
         // Update local state

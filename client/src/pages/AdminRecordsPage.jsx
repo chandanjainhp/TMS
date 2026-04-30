@@ -4,13 +4,8 @@ import RecordsList from '../components/records/RecordsList';
 const AdminRecordsPage = () => {
   return (
     <AdminLayout>
-      <div className="flex flex-col relative z-10 bg-slate-50 w-full min-h-screen">
-        {/* Scrollable content area */}
-        <main className="flex-1">
-          <div className="w-full px-4 py-4">
-            <RecordsList />
-          </div>
-        </main>
+      <div className="w-full rounded-xl border border-[rgba(0,0,0,0.1)] bg-white p-4 shadow-[rgba(0,0,0,0.04)_0px_4px_18px]">
+        <RecordsList />
       </div>
     </AdminLayout>
   );

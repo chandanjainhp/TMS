@@ -3,9 +3,6 @@ import { motion } from "framer-motion";
 import { Lock, ArrowLeft, KeyRound, Eye, EyeOff } from "lucide-react";
 import { Link, useNavigate } from "react-router-dom";
 import toast from "react-hot-toast";
-
-export default AdminResetPasswordOTPPage;
-
 const AdminResetPasswordOTPPage = () => {
     const [email, setEmail] = useState("backupid849@gmail.com");
     const [otp, setOtp] = useState("");
@@ -45,7 +42,7 @@ const AdminResetPasswordOTPPage = () => {
         setIsLoading(true);
 
         try {
-            const response = await fetch(`${import.meta.env.VITE_API_URL || 'http://localhost:5000'}/api/auth/admin/reset-password-otp`, {
+            const response = await fetch('/api/auth/admin/reset-password-otp', {
                 method: 'POST',
                 headers: {
                     'Content-Type': 'application/json',
@@ -76,17 +73,17 @@ const AdminResetPasswordOTPPage = () => {
     };
 
     return (
-        <div className='relative bg-gradient-to-br from-indigo-50 via-purple-50 to-pink-50 min-h-screen flex items-center justify-center overflow-hidden px-4'>
+        <div className='relative min-h-screen bg-[#f6f5f4] flex items-center justify-center overflow-hidden px-4'>
             <motion.div
                 initial={{ opacity: 0, y: 20 }}
                 animate={{ opacity: 1, y: 0 }}
                 transition={{ duration: 0.5 }}
-                className='max-w-md w-full bg-white rounded-2xl shadow-xl overflow-hidden'
+                className='max-w-md w-full rounded border border-[rgba(0,0,0,0.1)] bg-white shadow-[rgba(0,0,0,0.04)_0px_4px_18px] overflow-hidden'
             >
                 <div className='p-8'>
                     <div className='flex flex-col items-center mb-6'>
-                        <div className='w-16 h-16 bg-red-100 rounded-full flex items-center justify-center mb-4'>
-                            <KeyRound className='w-8 h-8 text-red-600' />
+                        <div className='w-16 h-16 bg-[#f2f9ff] rounded-full flex items-center justify-center mb-4'>
+                            <KeyRound className='w-8 h-8 text-[#097fe8]' />
                         </div>
                         <h2 className='text-3xl font-bold text-center text-gray-900'>
                             Verify OTP
@@ -105,7 +102,7 @@ const AdminResetPasswordOTPPage = () => {
                                 type='email'
                                 value={email}
                                 onChange={(e) => setEmail(e.target.value)}
-                                className='w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-transparent bg-gray-50'
+                                 className='w-full px-4 py-3 border border-[rgba(0,0,0,0.1)] rounded focus:ring-2 focus:ring-[#097fe8] focus:border-transparent bg-[#f6f5f4]'
                                 required
                                 readOnly
                             />
@@ -121,7 +118,7 @@ const AdminResetPasswordOTPPage = () => {
                                 onChange={(e) => setOtp(e.target.value.replace(/\D/g, '').slice(0, 6))}
                                 placeholder='Enter 6-digit OTP'
                                 maxLength={6}
-                                className='w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-transparent text-center text-2xl tracking-widest font-bold text-gray-800'
+                                 className='w-full px-4 py-3 border border-[rgba(0,0,0,0.1)] rounded focus:ring-2 focus:ring-[#097fe8] focus:border-transparent text-center text-2xl tracking-widest font-bold text-[rgba(0,0,0,0.95)]'
                                 required
                             />
                             <p className='text-xs text-gray-500 mt-2 text-center'>
@@ -139,7 +136,7 @@ const AdminResetPasswordOTPPage = () => {
                                     value={newPassword}
                                     onChange={(e) => setNewPassword(e.target.value)}
                                     placeholder='Enter new password'
-                                    className='w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-transparent pr-12'
+                                     className='w-full px-4 py-3 border border-[rgba(0,0,0,0.1)] rounded focus:ring-2 focus:ring-[#097fe8] focus:border-transparent pr-12'
                                     required
                                     minLength={8}
                                 />
@@ -164,7 +161,7 @@ const AdminResetPasswordOTPPage = () => {
                                     value={confirmPassword}
                                     onChange={(e) => setConfirmPassword(e.target.value)}
                                     placeholder='Confirm new password'
-                                    className='w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-transparent pr-12'
+                                     className='w-full px-4 py-3 border border-[rgba(0,0,0,0.1)] rounded focus:ring-2 focus:ring-[#097fe8] focus:border-transparent pr-12'
                                     required
                                     minLength={8}
                                 />
@@ -192,7 +189,7 @@ const AdminResetPasswordOTPPage = () => {
                         <motion.button
                             whileHover={{ scale: 1.01 }}
                             whileTap={{ scale: 0.99 }}
-                            className='w-full py-3 px-4 bg-indigo-600 text-white font-bold rounded-xl shadow-lg hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:ring-offset-2 transition duration-200'
+                            className='w-full py-3 px-4 bg-[#0075de] text-white font-bold rounded shadow hover:bg-[#005bab] focus:outline-none focus:ring-2 focus:ring-[#097fe8] focus:ring-offset-2 transition duration-200'
                             type='submit'
                             disabled={isLoading}
                         >
@@ -211,17 +208,17 @@ const AdminResetPasswordOTPPage = () => {
                     </form>
                 </div>
 
-                <div className='px-8 py-4 bg-gray-50 flex justify-between items-center border-t border-gray-100'>
+                <div className='px-8 py-4 bg-[#f6f5f4] flex justify-between items-center border-t border-[rgba(0,0,0,0.1)]'>
                     <Link
                         to='/admin/forgot-password'
-                        className='flex items-center gap-2 text-sm text-gray-600 hover:text-indigo-600 transition-colors'
+                        className='flex items-center gap-2 text-sm text-[#615d59] hover:text-[#0075de] transition-colors'
                     >
                         <ArrowLeft className='w-4 h-4' />
                         Request New OTP
                     </Link>
                     <Link
                         to='/admin-login'
-                        className='text-sm text-gray-600 hover:text-indigo-600 transition-colors'
+                        className='text-sm text-[#615d59] hover:text-[#0075de] transition-colors'
                     >
                         Back to Login
                     </Link>
@@ -230,3 +227,5 @@ const AdminResetPasswordOTPPage = () => {
         </div>
     );
 };
+
+export default AdminResetPasswordOTPPage;

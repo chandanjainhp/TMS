@@ -40,7 +40,7 @@ const EditingStudentData = () => {
   }, []);
 
   const fetchStudents = () => {
-    axios.get("http://localhost:5000/api/editingstudents/editingstudents")
+    axios.get("/api/editingstudents/editingstudents")
       .then(response => {
         const formattedData = response.data.map(student => ({
           ...student,
@@ -164,7 +164,7 @@ const EditingStudentData = () => {
       totalMarks: student.totalMarks === "N/A" ? null : student.totalMarks,
     }));
 
-    axios.put("http://localhost:5000/api/editingstudents/editingstudents", payload)
+    axios.put("/api/editingstudents/editingstudents", payload)
       .then(() => {
         setIsEditing(false);
         setShowImportSave(false);

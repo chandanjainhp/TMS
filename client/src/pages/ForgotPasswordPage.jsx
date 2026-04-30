@@ -6,96 +6,46 @@ import { ArrowLeft, Loader, Mail } from "lucide-react";
 import { Link, useNavigate } from "react-router-dom";
 
 const ForgotPasswordPage = () => {
-	const [email, setEmail] = useState("");
-	const [isSubmitted, setIsSubmitted] = useState(false);
-	const navigate = useNavigate();
+  const [email, setEmail] = useState("");
+  const [isSubmitted, setIsSubmitted] = useState(false);
+  const navigate = useNavigate();
+  const { isLoading, forgotPassword } = useAuthStore();
 
-	const { isLoading, forgotPassword } = useAuthStore();
+  const handleSubmit = async (e) => {
+    e.preventDefault();
+    await forgotPassword(email);
+    setIsSubmitted(true);
+    setTimeout(() => navigate("/reset-password"), 3000);
+  };
 
-	const handleSubmit = async (e) => {
-		e.preventDefault();
-		await forgotPassword(email);
-		setIsSubmitted(true);
-		// Navigate to reset password page after 3 seconds
-		setTimeout(() => {
-			navigate("/reset-password");
-		}, 3000);
-	};
+  return (
+    <div className="flex min-h-screen items-center justify-center bg-[#f6f5f4] p-4">
+      <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} className="w-full max-w-md rounded-2xl border border-[rgba(0,0,0,0.1)] bg-white p-8">
+        <div className="mb-6 inline-flex rounded-full bg-[#f2f9ff] p-3 text-[#097fe8]">
+          <Mail size={20} />
+        </div>
+        <h2 className="text-[40px] font-bold leading-[1.1] tracking-[-1px] text-[rgba(0,0,0,0.95)]">Reset access</h2>
+        <p className="mt-2 text-[#615d59]">Enter your email to receive a one-time verification code.</p>
 
-	return (
-		<div className='min-h-screen bg-gradient-to-br from-indigo-50 via-purple-50 to-pink-50 flex items-center justify-center relative overflow-hidden'>
-			<motion.div
-				initial={{ opacity: 0, y: 20 }}
-				animate={{ opacity: 1, y: 0 }}
-				transition={{ duration: 0.5 }}
-				className='max-w-md w-full bg-white rounded-2xl shadow-xl overflow-hidden'
-			>
-				<div className='p-8'>
-					<div className="flex justify-center mb-6">
-						<div className="w-16 h-16 bg-indigo-100 rounded-full flex items-center justify-center">
-							<Mail className="w-8 h-8 text-indigo-600" />
-						</div>
-					</div>
+        {!isSubmitted ? (
+          <form onSubmit={handleSubmit} className="mt-6">
+            <Input icon={Mail} type="email" placeholder="Email address" value={email} onChange={(e) => setEmail(e.target.value)} required />
+            <motion.button whileTap={{ scale: 0.97 }} type="submit" className="notion-btn-primary mt-2 w-full">
+              {isLoading ? <Loader className="mx-auto size-5 animate-spin" /> : "Send OTP"}
+            </motion.button>
+          </form>
+        ) : (
+          <div className="mt-6 rounded border border-[rgba(0,0,0,0.1)] bg-[#f6f5f4] p-4 text-[#615d59]">
+            OTP sent to <span className="font-semibold text-[rgba(0,0,0,0.95)]">{email}</span>. Redirecting to reset page...
+          </div>
+        )}
 
-					<h2 className='text-3xl font-bold mb-2 text-center text-gray-900'>
-						Forgot Password
-					</h2>
-
-					{!isSubmitted ? (
-						<>
-							<p className='text-gray-600 mb-8 text-center'>
-								Enter your email address and we'll send you an OTP to reset your password.
-							</p>
-							<form onSubmit={handleSubmit} className="space-y-6">
-								<Input
-									icon={Mail}
-									type='email'
-									placeholder='Email Address'
-									value={email}
-									onChange={(e) => setEmail(e.target.value)}
-									required
-								/>
-								<motion.button
-									whileHover={{ scale: 1.01 }}
-									whileTap={{ scale: 0.99 }}
-									className='w-full py-3 px-4 bg-indigo-600 text-white font-bold rounded-xl shadow-lg hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:ring-offset-2 transition duration-200'
-									type='submit'
-								>
-									{isLoading ? <Loader className='size-6 animate-spin mx-auto' /> : "Send OTP"}
-								</motion.button>
-							</form>
-						</>
-					) : (
-						<div className='text-center'>
-							<div className='w-16 h-16 bg-green-100 rounded-full flex items-center justify-center mx-auto mb-4'>
-								<Mail className='h-8 w-8 text-green-600' />
-							</div>
-							<p className='text-gray-900 font-semibold mb-2'>
-								OTP Sent!
-							</p>
-							<p className='text-gray-600 mb-6'>
-								We've sent a 6-digit code to <strong>{email}</strong>.
-							</p>
-							<p className='text-sm text-gray-500'>
-								Redirecting to reset page...
-							</p>
-							<Link
-								to="/reset-password"
-								className='mt-4 inline-block text-indigo-600 hover:text-indigo-800 font-semibold transition-colors'
-							>
-								Manual Redirect &rarr;
-							</Link>
-						</div>
-					)}
-				</div>
-
-				<div className='px-8 py-4 bg-gray-50 flex justify-center border-t border-gray-100'>
-					<Link to={"/login"} className='text-sm text-gray-600 hover:text-indigo-600 font-medium flex items-center transition-colors'>
-						<ArrowLeft className='h-4 w-4 mr-2' /> Back to Login
-					</Link>
-				</div>
-			</motion.div>
-		</div>
-	);
+        <Link to="/login" className="mt-6 inline-flex items-center gap-2 text-sm font-medium no-underline hover:text-[#005bab]">
+          <ArrowLeft size={14} /> Back to login
+        </Link>
+      </motion.div>
+    </div>
+  );
 };
+
 export default ForgotPasswordPage;

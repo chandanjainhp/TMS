@@ -13,12 +13,8 @@ const PasswordCriteria = ({ password }) => {
 		<div className='mt-2 space-y-1'>
 			{criteria.map((item) => (
 				<div key={item.label} className='flex items-center text-xs'>
-					{item.met ? (
-						<Check className='size-4 text-green-500 mr-2' />
-					) : (
-						<X className='size-4 text-gray-500 mr-2' />
-					)}
-					<span className={item.met ? "text-green-500" : "text-gray-400"}>{item.label}</span>
+					{item.met ? <Check className='mr-2 size-4 text-[#1aae39]' /> : <X className='mr-2 size-4 text-[#a39e98]' />}
+					<span className={item.met ? "text-[#1aae39]" : "text-[#a39e98]"}>{item.label}</span>
 				</div>
 			))}
 		</div>
@@ -37,11 +33,11 @@ const PasswordStrengthMeter = ({ password }) => {
 	const strength = getStrength(password);
 
 	const getColor = (strength) => {
-		if (strength === 0) return "bg-red-500";
-		if (strength === 1) return "bg-red-400";
-		if (strength === 2) return "bg-yellow-500";
-		if (strength === 3) return "bg-yellow-400";
-		return "bg-green-500";
+		if (strength === 0) return "bg-[#dd5b00]";
+		if (strength === 1) return "bg-[#ff64c8]";
+		if (strength === 2) return "bg-[#097fe8]";
+		if (strength === 3) return "bg-[#2a9d99]";
+		return "bg-[#1aae39]";
 	};
 
 	const getStrengthText = (strength) => {
@@ -54,9 +50,9 @@ const PasswordStrengthMeter = ({ password }) => {
 
 	return (
 		<div className='mt-2'>
-			<div className='flex justify-between items-center mb-1'>
-				<span className='text-xs text-gray-400'>Password strength</span>
-				<span className='text-xs text-gray-400'>{getStrengthText(strength)}</span>
+			<div className='mb-1 flex items-center justify-between'>
+				<span className='text-xs text-[#615d59]'>Password strength</span>
+				<span className='text-xs text-[#615d59]'>{getStrengthText(strength)}</span>
 			</div>
 
 			<div className='flex space-x-1'>
@@ -64,7 +60,7 @@ const PasswordStrengthMeter = ({ password }) => {
 					<div
 						key={index}
 						className={`h-1 w-1/4 rounded-full transition-colors duration-300 
-                ${index < strength ? getColor(strength) : "bg-gray-600"}
+                ${index < strength ? getColor(strength) : "bg-[#e9e7e5]"}
               `}
 					/>
 				))}

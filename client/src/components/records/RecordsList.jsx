@@ -33,7 +33,7 @@ const RecordsList = () => {
       // or "Student Repository" mode. User requested "all the update record" for "all the user page".
       // So we force publicView=true to get everything for the repository view.
 
-      const response = await axios.get('http://localhost:5000/api/form/records', {
+      const response = await axios.get('/api/form/records', {
         params: { publicView: 'true' },
         withCredentials: true
       });
