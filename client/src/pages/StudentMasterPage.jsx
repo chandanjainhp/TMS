@@ -4,18 +4,47 @@ import { Search, GraduationCap, Download, ChevronDown, Filter } from 'lucide-rea
 import PrincipalLayout from '../components/layout/PrincipalLayout';
 import toast from 'react-hot-toast';
 
-const DEPARTMENTS = ['Physics', 'Mathematics', 'Electronics', 'Computer Science', 'Chemistry', 'Biology'];
-const BRANCHES = ['PMCS', 'BCA', 'PME', 'PCM'];
 const SEMESTERS = ['1', '2', '3', '4', '5', '6'];
 
 export default function StudentMasterPage() {
     const [students, setStudents] = useState([]);
+    const [departments, setDepartments] = useState([]);
+    const [branches, setBranches] = useState([]);
     const [loading, setLoading] = useState(false);
     const [search, setSearch] = useState('');
     const [filters, setFilters] = useState({ department: '', branch: '', year: '' });
     const [stats, setStats] = useState({ total: 0, departments: 0 });
 
-    useEffect(() => { fetchStudents(); }, [filters]);
+    useEffect(() => {
+        fetchDepartments();
+        fetchBranches();
+    }, []);
+
+    useEffect(() => {
+        fetchStudents();
+    }, [filters]);
+
+    const fetchDepartments = async () => {
+        try {
+            const res = await axios.get('/api/branches', { withCredentials: true });
+            if (res.data.success) {
+                setDepartments(res.data.branches.map(b => b.name));
+            }
+        } catch {
+            toast.error('Failed to load departments');
+        }
+    };
+
+    const fetchBranches = async () => {
+        try {
+            const res = await axios.get('/api/branches', { withCredentials: true });
+            if (res.data.success) {
+                setBranches(res.data.branches.map(b => b.name));
+            }
+        } catch {
+            toast.error('Failed to load branches');
+        }
+    };
 
     const fetchStudents = async () => {
         setLoading(true);
@@ -101,8 +130,8 @@ export default function StudentMasterPage() {
                     </form>
 
                     {[
-                        { label: 'Department', key: 'department', options: DEPARTMENTS },
-                        { label: 'Branch', key: 'branch', options: BRANCHES },
+                        { label: 'Department', key: 'department', options: departments },
+                        { label: 'Branch', key: 'branch', options: branches },
                     ].map(f => (
                         <div key={f.key} className="relative min-w-[140px]">
                             <select
