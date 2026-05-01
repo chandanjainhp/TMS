@@ -4,7 +4,7 @@ import { Lock, ArrowLeft, KeyRound, Eye, EyeOff } from "lucide-react";
 import { Link, useNavigate } from "react-router-dom";
 import toast from "react-hot-toast";
 const AdminResetPasswordOTPPage = () => {
-    const [email, setEmail] = useState("backupid849@gmail.com");
+    const [email, setEmail] = useState("");
     const [otp, setOtp] = useState("");
     const [newPassword, setNewPassword] = useState("");
     const [confirmPassword, setConfirmPassword] = useState("");
@@ -15,12 +15,6 @@ const AdminResetPasswordOTPPage = () => {
 
     const handleSubmit = async (e) => {
         e.preventDefault();
-
-        // Validate email
-        if (email !== "backupid849@gmail.com") {
-            toast.error("Admin password reset is only available for authorized backup email");
-            return;
-        }
 
         // Validate OTP
         if (!otp || otp.length !== 6) {
@@ -104,7 +98,6 @@ const AdminResetPasswordOTPPage = () => {
                                 onChange={(e) => setEmail(e.target.value)}
                                  className='w-full px-4 py-3 border border-[rgba(0,0,0,0.1)] rounded focus:ring-2 focus:ring-[#097fe8] focus:border-transparent bg-[#f6f5f4]'
                                 required
-                                readOnly
                             />
                         </div>
 
