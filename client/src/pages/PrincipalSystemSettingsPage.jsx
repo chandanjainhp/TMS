@@ -44,7 +44,7 @@ export default function PrincipalSystemSettingsPage() {
         setDeptLoading(true);
         try {
             const res = await axios.get('/api/branches', { withCredentials: true });
-            if (res.data.success) setDepartments(res.data.branches);
+            if (res.data.success) setDepartments(res.data.data);
         } catch {
             toast.error('Failed to load departments');
         } finally {

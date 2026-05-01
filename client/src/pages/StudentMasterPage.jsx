@@ -28,7 +28,7 @@ export default function StudentMasterPage() {
         try {
             const res = await axios.get('/api/branches', { withCredentials: true });
             if (res.data.success) {
-                setDepartments(res.data.branches.map(b => b.name));
+                setDepartments(res.data.data.map(b => b.name));
             }
         } catch {
             toast.error('Failed to load departments');
@@ -39,7 +39,7 @@ export default function StudentMasterPage() {
         try {
             const res = await axios.get('/api/branches', { withCredentials: true });
             if (res.data.success) {
-                setBranches(res.data.branches.map(b => b.name));
+                setBranches(res.data.data.map(b => b.name));
             }
         } catch {
             toast.error('Failed to load branches');
