@@ -273,7 +273,7 @@ const MessagingSystem = () => {
     });
 
     if (isCheckingUser || isCheckingAdmin) {
-        return <div className="flex justify-center p-10"><Loader className="animate-spin text-indigo-600" /></div>;
+        return <div className="flex justify-center p-10"><Loader className="animate-spin text-[#0075de]" /></div>;
     }
 
     return (
@@ -290,7 +290,7 @@ const MessagingSystem = () => {
                             placeholder="Search users..."
                             value={searchTerm}
                             onChange={e => setSearchTerm(e.target.value)}
-                            className="w-full pl-9 pr-4 py-2 bg-white border border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-indigo-500 outline-none"
+                            className="w-full pl-9 pr-4 py-2 bg-white border border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-[#097fe8] outline-none"
                         />
                     </div>
                 </div>
@@ -308,11 +308,11 @@ const MessagingSystem = () => {
                             <div
                                 key={contact._id}
                                 onClick={() => handleSelectUser(contact)}
-                                className={`p-4 flex items-center gap-3 cursor-pointer hover:bg-gray-50 border-l-4 transition-all ${isSelected ? 'border-l-indigo-600 bg-indigo-50' : 'border-l-transparent'
+                                className={`p-4 flex items-center gap-3 cursor-pointer hover:bg-gray-50 border-l-4 transition-all ${isSelected ? 'border-l-[#0075de] bg-[#f2f9ff]' : 'border-l-transparent'
                                     }`}
                             >
                                 <div className="relative">
-                                    <div className={`w-10 h-10 rounded-full flex items-center justify-center text-white font-bold text-sm shadow-sm ${isAdmin ? 'bg-rose-600' : isTeacher ? 'bg-emerald-600' : isSelected ? 'bg-indigo-600' : 'bg-gray-400'
+                                    <div className={`w-10 h-10 rounded-full flex items-center justify-center text-white font-bold text-sm shadow-sm ${isAdmin ? 'bg-rose-600' : isTeacher ? 'bg-emerald-600' : isSelected ? 'bg-[#0075de]' : 'bg-gray-400'
                                         }`}>
                                         {contact.name.charAt(0).toUpperCase()}
                                     </div>
@@ -370,7 +370,7 @@ const MessagingSystem = () => {
                                 <button className="md:hidden p-2 hover:bg-gray-100 rounded-full" onClick={() => setSidebarOpen(true)}>
                                     <ArrowLeft className="w-5 h-5 text-gray-600" />
                                 </button>
-                                <div className="w-9 h-9 bg-indigo-600 rounded-full flex items-center justify-center text-white font-bold shadow-sm">
+                                <div className="w-9 h-9 bg-[#0075de] rounded-full flex items-center justify-center text-white font-bold shadow-sm">
                                     {selectedUser.name.charAt(0).toUpperCase()}
                                 </div>
                                 <div>
@@ -396,7 +396,7 @@ const MessagingSystem = () => {
                                         <div key={idx} className={`flex w-full ${isMe ? 'justify-end' : 'justify-start'}`}>
                                             <div className={`max-w-[75%] md:max-w-[60%] flex flex-col ${isMe ? 'items-end' : 'items-start'}`}>
                                                 <div className={`px-4 py-2.5 rounded-2xl text-sm shadow-sm ${isMe
-                                                    ? 'bg-indigo-600 text-white rounded-br-none'
+                                                    ? 'bg-[#0075de] text-white rounded-br-none'
                                                     : 'bg-white text-gray-800 border border-gray-200 rounded-bl-none'
                                                     }`}>
                                                     {msg.attachments && msg.attachments.length > 0 && (
@@ -407,7 +407,7 @@ const MessagingSystem = () => {
                                                                     href={file.fileUrl}
                                                                     target="_blank"
                                                                     rel="noreferrer"
-                                                                    className={`flex items-center gap-2 p-2 rounded text-xs ${isMe ? 'bg-indigo-500 text-white/90' : 'bg-gray-100 text-gray-700'} hover:opacity-90 transition`}
+                                                                    className={`flex items-center gap-2 p-2 rounded text-xs ${isMe ? 'bg-[#005bab] text-white/90' : 'bg-gray-100 text-gray-700'} hover:opacity-90 transition`}
                                                                 >
                                                                     <FileIcon className="w-4 h-4" />
                                                                     <span className="underline truncate max-w-[150px]">{file.originalName}</span>
@@ -466,7 +466,7 @@ const MessagingSystem = () => {
                                     {isUploading ? <Loader className="w-5 h-5 animate-spin" /> : <Paperclip className="w-5 h-5" />}
                                 </button>
 
-                                <div className="flex-1 bg-gray-100 rounded-xl px-4 py-2 focus-within:ring-2 focus-within:ring-indigo-100 transition-all border border-transparent focus-within:border-indigo-300">
+                                <div className="flex-1 bg-gray-100 rounded-xl px-4 py-2 focus-within:ring-2 focus-within:ring-[#097fe8] transition-all border border-transparent focus-within:border-[#0075de]">
                                     <textarea
                                         value={messageInput}
                                         onChange={e => setMessageInput(e.target.value)}
@@ -484,7 +484,7 @@ const MessagingSystem = () => {
                                 <button
                                     type="submit"
                                     disabled={(!messageInput.trim() && !attachment) || sending}
-                                    className="p-3 bg-indigo-600 hover:bg-indigo-700 text-white rounded-xl shadow-md transition-all disabled:opacity-50 disabled:cursor-not-allowed flex-shrink-0"
+                                    className="p-3 bg-[#0075de] hover:bg-[#005bab] text-white rounded-xl shadow-md transition-all disabled:opacity-50 disabled:cursor-not-allowed flex-shrink-0"
                                 >
                                     {sending ? <Loader className="w-5 h-5 animate-spin" /> : <Send className="w-5 h-5" />}
                                 </button>
@@ -494,13 +494,13 @@ const MessagingSystem = () => {
                 ) : (
                     <div className="h-full flex flex-col items-center justify-center p-8 bg-slate-50">
                         <div className="w-24 h-24 bg-white rounded-full flex items-center justify-center shadow-sm mb-6">
-                            <MessageSquare className="w-10 h-10 text-indigo-500" />
+                            <MessageSquare className="w-10 h-10 text-[#0075de]" />
                         </div>
                         <h2 className="text-2xl font-bold text-gray-800">TMS Chat</h2>
                         <p className="text-gray-500 mt-2 text-center max-w-xs">
                             Select a user from the sidebar to start chatting.
                         </p>
-                        <button className="md:hidden mt-6 bg-indigo-600 text-white px-6 py-2 rounded-full text-sm font-medium shadow-md" onClick={() => setSidebarOpen(true)}>
+                        <button className="md:hidden mt-6 bg-[#0075de] text-white px-6 py-2 rounded-full text-sm font-medium shadow-md" onClick={() => setSidebarOpen(true)}>
                             View Contacts
                         </button>
                     </div>
