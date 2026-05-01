@@ -1,6 +1,8 @@
 import { useState } from "react";
 import { Link } from "react-router-dom";
 import { ChevronDown, Menu, X } from "lucide-react";
+import { useAuthStore } from "../../store/authStore";
+import { useAdminAuthStore } from "../../store/adminAuthStore";
 
 const productGroups = [
   {
@@ -24,6 +26,9 @@ const productGroups = [
 export default function Navbar() {
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
   const [isProductOpen, setIsProductOpen] = useState(false);
+  const { isAuthenticated } = useAuthStore();
+  const { isAuthenticated: adminIsAuthenticated } = useAdminAuthStore();
+  const userLoggedIn = isAuthenticated || adminIsAuthenticated;
 
   return (
     <nav className="border-b border-[rgba(0,0,0,0.1)] bg-white">
@@ -35,6 +40,7 @@ export default function Navbar() {
           </Link>
 
           <div className="hidden items-center gap-6 md:flex">
+            {userLoggedIn && (
             <div
               className="relative"
               onMouseEnter={() => setIsProductOpen(true)}
@@ -72,6 +78,7 @@ export default function Navbar() {
                 </div>
               )}
             </div>
+            )}
 
             <Link to="/features" className="text-[15px] font-medium text-[rgba(0,0,0,0.95)] no-underline hover:text-[#0075de]">
               Features
