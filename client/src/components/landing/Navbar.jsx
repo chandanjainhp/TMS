@@ -43,6 +43,7 @@ export default function Navbar() {
               <button
                 type="button"
                 className="inline-flex items-center gap-1 text-[15px] font-medium text-[rgba(0,0,0,0.95)] hover:text-[#0075de]"
+                onClick={() => setIsProductOpen(!isProductOpen)}
               >
                 Product
                 <ChevronDown size={16} />
@@ -59,6 +60,7 @@ export default function Navbar() {
                           <Link
                             key={item.name}
                             to={item.to}
+                            onClick={() => setIsProductOpen(false)}
                             className="block rounded px-2 py-1.5 text-[15px] text-[rgba(0,0,0,0.95)] no-underline hover:bg-[#f6f5f4]"
                           >
                             {item.name}
@@ -77,7 +79,7 @@ export default function Navbar() {
             <Link to="/pricing" className="text-[15px] font-medium text-[rgba(0,0,0,0.95)] no-underline hover:text-[#0075de]">
               Pricing
             </Link>
-            <Link to="/docs" className="text-[15px] font-medium text-[rgba(0,0,0,0.95)] no-underline hover:text-[#0075de]">
+            <Link to="/guides" className="text-[15px] font-medium text-[rgba(0,0,0,0.95)] no-underline hover:text-[#0075de]">
               Docs
             </Link>
             <Link to="/login" className="text-[15px] font-medium text-[rgba(0,0,0,0.95)] no-underline hover:text-[#0075de]">
@@ -102,22 +104,22 @@ export default function Navbar() {
       {isMobileMenuOpen && (
         <div className="border-t border-[rgba(0,0,0,0.1)] bg-white md:hidden">
           <div className="notion-container space-y-2 py-3">
-            <Link to="/features" className="block rounded px-2 py-2 text-[15px] text-[rgba(0,0,0,0.95)] no-underline hover:bg-[#f6f5f4]">
+            <Link to="/features" onClick={() => setIsMobileMenuOpen(false)} className="block rounded px-2 py-2 text-[15px] text-[rgba(0,0,0,0.95)] no-underline hover:bg-[#f6f5f4]">
               Features
             </Link>
-            <Link to="/pricing" className="block rounded px-2 py-2 text-[15px] text-[rgba(0,0,0,0.95)] no-underline hover:bg-[#f6f5f4]">
+            <Link to="/pricing" onClick={() => setIsMobileMenuOpen(false)} className="block rounded px-2 py-2 text-[15px] text-[rgba(0,0,0,0.95)] no-underline hover:bg-[#f6f5f4]">
               Pricing
             </Link>
-            <Link to="/docs" className="block rounded px-2 py-2 text-[15px] text-[rgba(0,0,0,0.95)] no-underline hover:bg-[#f6f5f4]">
+            <Link to="/guides" onClick={() => setIsMobileMenuOpen(false)} className="block rounded px-2 py-2 text-[15px] text-[rgba(0,0,0,0.95)] no-underline hover:bg-[#f6f5f4]">
               Docs
             </Link>
-            <Link to="/admin-login" className="block rounded px-2 py-2 text-[15px] text-[rgba(0,0,0,0.95)] no-underline hover:bg-[#f6f5f4]">
+            <Link to="/admin-login" onClick={() => setIsMobileMenuOpen(false)} className="block rounded px-2 py-2 text-[15px] text-[rgba(0,0,0,0.95)] no-underline hover:bg-[#f6f5f4]">
               Admin portal
             </Link>
-            <Link to="/login" className="block rounded px-2 py-2 text-[15px] text-[rgba(0,0,0,0.95)] no-underline hover:bg-[#f6f5f4]">
+            <Link to="/login" onClick={() => setIsMobileMenuOpen(false)} className="block rounded px-2 py-2 text-[15px] text-[rgba(0,0,0,0.95)] no-underline hover:bg-[#f6f5f4]">
               Log in
             </Link>
-            <Link to="/signup" className="notion-btn-primary mt-2 w-full no-underline text-center">
+            <Link to="/signup" onClick={() => setIsMobileMenuOpen(false)} className="notion-btn-primary mt-2 w-full no-underline text-center">
               Get started
             </Link>
           </div>
