@@ -92,6 +92,9 @@ export default function Navbar() {
             <Link to="/login" className="text-[15px] font-medium text-[rgba(0,0,0,0.95)] no-underline hover:text-[#0075de]">
               Log in
             </Link>
+            <Link to="/admin-login" className="text-[15px] font-medium text-[rgba(0,0,0,0.95)] no-underline hover:text-[#0075de]">
+              Admin portal
+            </Link>
             <Link to="/signup" className="notion-btn-primary no-underline">
               Get started
             </Link>
