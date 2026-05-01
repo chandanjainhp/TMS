@@ -132,27 +132,6 @@ const PrincipalDashboardPage = () => {
             </div>
           </div>
 
-          <div className="space-y-6">
-            <div className="rounded-xl border border-[rgba(0,0,0,0.1)] bg-white p-6 shadow-[rgba(0,0,0,0.04)_0px_4px_18px]">
-              <h3 className="mb-3 font-bold text-[rgba(0,0,0,0.95)]">Departments</h3>
-              <div className="space-y-2">
-                {["Computer Science", "Physics", "Mathematics", "Electronics", "Chemistry"].map((dept) => (
-                  <div key={dept} className="rounded border border-[rgba(0,0,0,0.1)] bg-[#f6f5f4] px-3 py-2 text-sm text-[#31302e]">
-                    {dept}
-                  </div>
-                ))}
-              </div>
-            </div>
-
-            <div className="rounded-xl border border-[rgba(0,0,0,0.1)] bg-[#fff5f2] p-6">
-              <AlertCircle className="mb-3 h-7 w-7 text-[#dd5b00]" />
-              <h3 className="text-lg font-bold text-[rgba(0,0,0,0.95)]">Pending approvals</h3>
-              <p className="mt-2 text-sm text-[#615d59]">3 departments have submitted final marks for verification.</p>
-              <button type="button" className="mt-4 rounded bg-[#0075de] px-4 py-2 text-sm font-semibold text-white hover:bg-[#005bab]">
-                Review now
-              </button>
-            </div>
-          </div>
         </div>
       </div>
     </PrincipalLayout>
