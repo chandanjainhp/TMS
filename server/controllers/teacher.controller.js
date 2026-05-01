@@ -122,3 +122,41 @@ export const getDepartmentTeachers = async (req, res) => {
         res.status(500).json({ success: false, message: "Error fetching faculty list" });
     }
 };
+
+// Get announcements for teacher's classes
+export const getAnnouncements = async (req, res) => {
+    try {
+        const announcements = await Announcement.find({ teacherId: req.user._id }).sort({ createdAt: -1 });
+        res.status(200).json({ success: true, data: announcements });
+    } catch (error) {
+        console.error("Error fetching announcements:", error);
+        res.status(500).json({ success: false, message: "Error fetching announcements" });
+    }
+};
+
+// Create announcement
+export const createAnnouncement = async (req, res) => {
+    try {
+        const { title, content, department, section, subject } = req.body;
+
+        if (!title || !content) {
+            return res.status(400).json({ success: false, message: "Title and content are required" });
+        }
+
+        const announcement = new Announcement({
+            title,
+            content,
+            department: department || '',
+            section: section || '',
+            subject: subject || '',
+            teacherId: req.user._id,
+            teacherName: req.user.name
+        });
+
+        await announcement.save();
+        res.status(201).json({ success: true, message: "Announcement created", data: announcement });
+    } catch (error) {
+        console.error("Error creating announcement:", error);
+        res.status(500).json({ success: false, message: "Error creating announcement" });
+    }
+};

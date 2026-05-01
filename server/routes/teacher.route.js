@@ -1,6 +1,6 @@
 import express from "express";
 import { verifyToken, isAdmin } from "../middleware/verifyToken.js";
-import { getMyClasses, createTeacher, getDepartmentTeachers } from "../controllers/teacher.controller.js";
+import { getMyClasses, createTeacher, getDepartmentTeachers, getAnnouncements, createAnnouncement } from "../controllers/teacher.controller.js";
 
 const router = express.Router();
 
@@ -10,5 +10,9 @@ router.get("/my-classes", verifyToken, getMyClasses);
 // Admin-only: manage faculty
 router.post("/create", verifyToken, isAdmin, createTeacher);
 router.get("/list", verifyToken, isAdmin, getDepartmentTeachers);
+
+// Teacher announcements
+router.get("/announcements", verifyToken, getAnnouncements);
+router.post("/announcements", verifyToken, createAnnouncement);
 
 export default router;
