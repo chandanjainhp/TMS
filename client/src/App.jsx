@@ -50,8 +50,10 @@ import {
 // Protect routes that require authentication
 const ProtectedRoute = ({ children }) => {
   const { isAuthenticated, user } = useAuthStore();
+  const { isAuthenticated: adminIsAuthenticated, admin } = useAdminAuthStore();
   const location = useLocation();
   const isAdminRoute = location.pathname.startsWith('/admin');
+  const ADMIN_ROLES = ['admin', 'hod', 'principal', 'superAdmin'];
 
   if (!isAuthenticated || !user) {
     return <Navigate to="/login" replace />;
@@ -65,6 +67,15 @@ const ProtectedRoute = ({ children }) => {
   if (isAdminRoute && (!user.role || user.role !== 'admin')) {
     console.log('User is not an admin, redirecting from admin route');
     return <Navigate to="/settings" replace />;
+  }
+
+  // Redirect admin users away from teacher-facing /settings to admin settings
+  if (location.pathname === '/settings') {
+    const isAdmin = (adminIsAuthenticated && admin && ADMIN_ROLES.includes(admin.role)) ||
+      (user && ADMIN_ROLES.includes(user.role));
+    if (isAdmin) {
+      return <Navigate to="/admin/settings" replace />;
+    }
   }
 
   return children;
